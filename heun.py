@@ -24,7 +24,7 @@ def Q(z_val):
 
 def X(z_val):
     """A factor appearing in the definition of both K_1 and K_2"""
-    return - Q(z_val) - epsilon/(a - z_val) - gamma/z_val - delta/(z_val - 1) - 1
+    return - Q(z_val) - P(z_val) - 1
 
 
 def Y(z_val):

@@ -11,104 +11,91 @@ V = np.zeros(N, dtype=complex)
 V[0] = 1
 
 
-def first_order_coeff(z: np.ndarray, a: float, gamma: float, delta: float, epsilon: float) -> np.ndarray:
+def first_derivative_coeff(z_range: np.ndarray, a: float, gamma: float, delta: float, epsilon: float) -> np.ndarray:
     """The coefficient of the first derivative in the Heun equation"""
-    return gamma/z + delta/(z - 1) + epsilon/(z - a)
+    return gamma/z_range + delta/(z_range - 1) + epsilon/(z_range - a)
 
 
-def second_order_coeff(z: np.ndarray, a: float, q: float, alpha: float, beta: float) -> np.ndarray:
+def second_derivative_coeff(z_range: np.ndarray, a: float, q: float, alpha: float, beta: float) -> np.ndarray:
     """The coefficient of the zeroth derivative in the Heun equation"""
-    return (alpha * beta * z - q) / (z * (z - 1) * (z - a))
+    return (alpha * beta * z_range - q) / (z_range * (z_range - 1) * (z_range - a))
 
 
-def weight_function(z_val, a, gamma, delta, epsilon):
+def weight_func(z_range, a, gamma, delta, epsilon):
     """The factor in the integrand of J(z) which precedes X(z)"""
-    return (z_val**gamma) * ((z_val - 1)**delta) * ((a - z_val)**epsilon) * np.exp(z_val)
+    return (z_range**gamma) * ((z_range - 1)**delta) * ((a - z_range)**epsilon) * np.exp(z_range)
 
 
-def J_integrand(z_val, a, q, alpha, beta, gamma, delta, epsilon):
-    """The integrand of the J(z) integral"""
-    return Y(z_val, a, gamma, delta, epsilon) * X(z_val, a, q, alpha, beta, gamma, delta, epsilon)
-
-
-def delta_J(domain, a, q, alpha, beta, gamma, delta, epsilon):
-    """Returns a vector whose elements are the trapezoidal integrals over small distances delta_z"""
-    integrands = J_integrand(domain, a, q, alpha, beta, gamma, delta, epsilon)
-    integrals = 0.5 * (integrands[0:N-1] + integrands[1:N])
-    integrals = np.insert(integrals, 0, 0, axis=0)
-    return integrals
-
-
-def get_K_1_matrix(alpha, beta, gamma, delta, epsilon, z_interval) -> np.ndarray:
+def kernel_1(X, Y, delta_z) -> np.ndarray:
     """Returns an array which is the matrix form of K_1"""
-    delta_J_vector = delta_J(z_interval, a, q, alpha,
-                             beta, gamma, delta, epsilon)
+    integrand = X * Y
+    consecutive_integrals = 0.5*(integrand[0:N-1] + integrand[1:N])
+    consecutive_integrals = np.insert(consecutive_integrals, 0, 0, axis=0)
 
-    J_0_to_i = np.cumsum(delta_J_vector)
+    cumulative_sums = np.cumsum(consecutive_integrals)
 
-    K_1x, K_1y = np.meshgrid(J_0_to_i, J_0_to_i, sparse=False)
-    K_1_matrix = K_1x - K_1y
+    kx, ky = np.meshgrid(cumulative_sums, cumulative_sums, sparse=False)
+    kernel = kx - ky
 
-    prefactors = Y(z, a, gamma, delta, epsilon)
-    prefactor, _ = np.meshgrid(prefactors, prefactors, sparse=False)
+    prefactor, _ = np.meshgrid(Y, Y, sparse=False)
 
-    K_1_matrix = K_1_matrix/prefactor
+    kernel = kernel/prefactor
 
-    K_1_matrix = 1 + delta_z*K_1_matrix
-    return K_1_matrix
+    kernel = 1 + delta_z*kernel
+    return kernel
 
 
-def get_K_2_matrix() -> np.ndarray:
+def kernel_2(X, Q) -> np.ndarray:
     """Returns an array which is the matrix form of K_2"""
-    K_2_matrix = np.zeros((N, N), dtype=complex)
+    kernel = np.zeros((N, N), dtype=complex)
 
     # Can we vectorise this?
     for i in range(N):
-        K_2_matrix[i] = np.real(
-            np.exp(-z)*np.exp(z[i])*X(z[i], a, q, alpha, beta, gamma, delta, epsilon) + Q(z[i], a, q, alpha, beta))
+        kernel[i] = np.real(np.exp(-z)*np.exp(z[i])*X + Q)
 
-    return K_2_matrix
+    return kernel
 
 
-def get_K_matrix(K_number: int) -> np.ndarray:
+def kernel(subscript: int, X, Y, Q, delta_z) -> np.ndarray:
     """Returns either K_1 or K_2 depending on the value of K_number.
     Returns the zero matrix if there is no K matrix associated with K_number"""
-    if K_number == 1:
-        return get_K_1_matrix()
+    if subscript == 1:
+        return kernel_1(X, Y, delta_z)
 
-    if K_number == 2:
-        return get_K_2_matrix()
+    if subscript == 2:
+        return kernel_2(X, Q)
 
     return np.zeros((N, N))
 
 
-def get_G_column(G_number: int):
+def greens_func(G_number: int, X: np.ndarray, Y: np.ndarray, Q: np.ndarray, delta_z: float) -> np.ndarray:
     """Returns the G_1 or G_2 matrix, depending on K_number, as defined in the BGT method"""
-    K = get_K_matrix(G_number)
+    res_kernel = kernel(G_number, X, Y, Q, delta_z)
 
-    dK = np.diag(np.diag(K))
+    diagonal = np.diag(np.diag(res_kernel))
 
-    lhs = IDENTITY_MATRIX - delta_z*K + 0.5*delta_z*dK
+    lhs = IDENTITY_MATRIX - delta_z*res_kernel + 0.5*delta_z*diagonal
 
-    G = (1/delta_z)*(solve_triangular(lhs, V, trans=1))
+    green = (1/delta_z)*(solve_triangular(lhs, V, trans=1))
 
-    G[0] = 0
+    green[0] = 0
 
-    return G
+    return green
 
 
-def Heun(a_param, q_param, alpha_param, beta_param, gamma_param, delta_param, z_interval):
+def Heun(a_param, q_param, alpha_param, beta_param, gamma_param, delta_param, z_range):
     """Returns teh R matrix, whose first column approximates the solution to the Heun equation"""
     epsilon_param = alpha_param + beta_param + 1 - gamma_param - delta_param
+    delta_z = (z_range[-1] - z_range[0])/N
 
-    P = first_order_coeff(z_interval, a_param, gamma_param,
-                          delta_param, epsilon_param)
-    Q = second_order_coeff(z_interval, a_param, q_param,
-                           alpha_param, beta_param)
+    P = first_derivative_coeff(
+        z_range, a_param, gamma_param, delta_param, epsilon_param)
+    Q = second_derivative_coeff(
+        z_range, a_param, q_param, alpha_param, beta_param)
     X = - P - Q - 1
-    Y = weight_function(z_interval, a, gamma, delta, epsilon_param)
+    Y = weight_func(z_range, a_param, gamma_param, delta_param, epsilon_param)
 
-    G_1 = get_G_column(1)
+    G_1 = greens_func(1, X, Y, Q, delta_z)
 
     delta_z = (z_max - z_min)/N
 
@@ -117,7 +104,7 @@ def Heun(a_param, q_param, alpha_param, beta_param, gamma_param, delta_param, z_
     int_G_1 = np.cumsum(int_G_1)
     Hl = Hl_0*(1 + int_G_1)
 
-    G_2 = get_G_column(2)
+    G_2 = greens_func(2, X, Y, Q, delta_z)
 
     exp_G_2 = np.exp(-z)*G_2
     sum_exp_G_2 = 0.5*delta_z*(exp_G_2[1:N]+exp_G_2[0:N-1])

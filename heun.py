@@ -106,7 +106,7 @@ def path_ordered_exp_2(q_vec: np.ndarray, x_vec: np.ndarray,
 def heun(a: complex, q: complex,
          alpha: complex, beta: complex, gamma: complex, delta: complex,
          z_range: np.ndarray) -> np.ndarray:
-    """Returns teh R matrix, whose first column approximates the solution to the Heun equation"""
+    """Returns the R matrix, whose first column approximates the solution to the Heun equation"""
     epsilon = alpha + beta + 1 - gamma - delta
     delta_z = (z_range[-1] - z_range[0])/N
 
@@ -143,7 +143,7 @@ if __name__ == "__main__":
     Z = np.linspace(Z_MIN, Z_MAX, N)
 
     start = time.perf_counter()
-    y = heun(1 - A, ALPHA*BETA - Q, ALPHA, BETA, DELTA, GAMMA, 1 - Z)
+    y = heun(1 - A, ALPHA * BETA - Q, ALPHA, BETA, DELTA, GAMMA, 1 - Z)
     end = time.perf_counter()
 
     print(end - start)

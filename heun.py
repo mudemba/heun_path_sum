@@ -11,12 +11,14 @@ V = np.zeros(N, dtype=complex)
 V[0] = 1
 
 
-def first_derivative_coeff(z_range: np.ndarray, a: float, gamma: float, delta: float, epsilon: float) -> np.ndarray:
+def first_deriv_coeff(z_range: np.ndarray,
+                      a: float, gamma: float, delta: float, epsilon: float) -> np.ndarray:
     """The coefficient of the first derivative in the Heun equation"""
     return gamma/z_range + delta/(z_range - 1) + epsilon/(z_range - a)
 
 
-def second_derivative_coeff(z_range: np.ndarray, a: float, q: float, alpha: float, beta: float) -> np.ndarray:
+def second_deriv_coeff(z_range: np.ndarray,
+                       a: float, q: float,  alpha: float, beta: float) -> np.ndarray:
     """The coefficient of the zeroth derivative in the Heun equation"""
     return (alpha * beta * z_range - q) / (z_range * (z_range - 1) * (z_range - a))
 
@@ -26,9 +28,9 @@ def weight_func(z_range, a, gamma, delta, epsilon):
     return (z_range**gamma) * ((z_range - 1)**delta) * ((a - z_range)**epsilon) * np.exp(z_range)
 
 
-def kernel_1(X, Y, delta_z) -> np.ndarray:
+def get_kernel_1(factor_1, factor_2, delta_z) -> np.ndarray:
     """Returns an array which is the matrix form of K_1"""
-    integrand = X * Y
+    integrand = factor_1 * factor_2
     consecutive_integrals = 0.5*(integrand[0:N-1] + integrand[1:N])
     consecutive_integrals = np.insert(consecutive_integrals, 0, 0, axis=0)
 
@@ -37,7 +39,7 @@ def kernel_1(X, Y, delta_z) -> np.ndarray:
     kx, ky = np.meshgrid(cumulative_sums, cumulative_sums, sparse=False)
     kernel = kx - ky
 
-    prefactor, _ = np.meshgrid(Y, Y, sparse=False)
+    prefactor, _ = np.meshgrid(factor_2, factor_2, sparse=False)
 
     kernel = kernel/prefactor
 
@@ -45,7 +47,7 @@ def kernel_1(X, Y, delta_z) -> np.ndarray:
     return kernel
 
 
-def kernel_2(X, Q) -> np.ndarray:
+def get_kernel_2(X, Q) -> np.ndarray:
     """Returns an array which is the matrix form of K_2"""
     kernel = np.zeros((N, N), dtype=complex)
 
@@ -56,21 +58,22 @@ def kernel_2(X, Q) -> np.ndarray:
     return kernel
 
 
-def kernel(subscript: int, X, Y, Q, delta_z) -> np.ndarray:
+def get_kernel(subscript: int, X, Y, Q, delta_z) -> np.ndarray:
     """Returns either K_1 or K_2 depending on the value of K_number.
     Returns the zero matrix if there is no K matrix associated with K_number"""
     if subscript == 1:
-        return kernel_1(X, Y, delta_z)
+        return get_kernel_1(X, Y, delta_z)
 
     if subscript == 2:
-        return kernel_2(X, Q)
+        return get_kernel_2(X, Q)
 
     return np.zeros((N, N))
 
 
-def greens_func(G_number: int, X: np.ndarray, Y: np.ndarray, Q: np.ndarray, delta_z: float) -> np.ndarray:
+def get_greens_func(G_number: int,
+                    X: np.ndarray, Y: np.ndarray, Q: np.ndarray, delta_z: float) -> np.ndarray:
     """Returns the G_1 or G_2 matrix, depending on K_number, as defined in the BGT method"""
-    res_kernel = kernel(G_number, X, Y, Q, delta_z)
+    res_kernel = get_kernel(G_number, X, Y, Q, delta_z)
 
     diagonal = np.diag(np.diag(res_kernel))
 
@@ -83,57 +86,53 @@ def greens_func(G_number: int, X: np.ndarray, Y: np.ndarray, Q: np.ndarray, delt
     return green
 
 
-def Heun(a_param, q_param, alpha_param, beta_param, gamma_param, delta_param, z_range):
+def heun(a, q, alpha, beta, gamma, delta, z_range):
     """Returns teh R matrix, whose first column approximates the solution to the Heun equation"""
-    epsilon_param = alpha_param + beta_param + 1 - gamma_param - delta_param
+    epsilon = alpha + beta + 1 - gamma - delta
     delta_z = (z_range[-1] - z_range[0])/N
 
-    P = first_derivative_coeff(
-        z_range, a_param, gamma_param, delta_param, epsilon_param)
-    Q = second_derivative_coeff(
-        z_range, a_param, q_param, alpha_param, beta_param)
+    P = first_deriv_coeff(z_range, a, gamma, delta, epsilon)
+    Q = second_deriv_coeff(z_range, a, q, alpha, beta)
     X = - P - Q - 1
-    Y = weight_func(z_range, a_param, gamma_param, delta_param, epsilon_param)
+    Y = weight_func(z_range, a, gamma, delta, epsilon)
 
-    G_1 = greens_func(1, X, Y, Q, delta_z)
+    green_1 = get_greens_func(1, X, Y, Q, delta_z)
 
-    delta_z = (z_max - z_min)/N
-
-    int_G_1 = 0.5*delta_z*(G_1[0:N - 1] + G_1[1:N])
+    int_G_1 = 0.5*delta_z*(green_1[0:N - 1] + green_1[1:N])
     int_G_1 = np.insert(int_G_1, 0, 0, axis=0)
     int_G_1 = np.cumsum(int_G_1)
-    Hl = Hl_0*(1 + int_G_1)
+    heun_function = init_val*(1 + int_G_1)
 
-    G_2 = greens_func(2, X, Y, Q, delta_z)
+    green_2 = get_greens_func(2, X, Y, Q, delta_z)
 
-    exp_G_2 = np.exp(-z)*G_2
+    exp_G_2 = np.exp(-z)*green_2
     sum_exp_G_2 = 0.5*delta_z*(exp_G_2[1:N]+exp_G_2[0:N-1])
     sum_exp_G_2 = np.insert(sum_exp_G_2, 0, 0, axis=0)
     sum_exp_G_2 = np.cumsum(sum_exp_G_2)
     res_G_2 = np.exp(z)*sum_exp_G_2
 
-    int_G_2 = 0.5*delta_z*(G_2[1:N] + G_2[0:N-1])
+    int_G_2 = 0.5*delta_z*(green_2[1:N] + green_2[0:N-1])
     int_G_2 = np.insert(int_G_2, 0, 0, axis=0)
     int_G_2 = np.cumsum(int_G_2)
 
-    R2 = np.exp(z-z_min) - 1 + res_G_2 - int_G_2
+    R2 = np.exp(z-z_range[0]) - 1 + res_G_2 - int_G_2
 
-    Hl += (Hl_0_prime - Hl_0) * R2
-    return Hl
+    heun_function += (init_slope - init_val) * R2
+    return heun_function
 
 
 if __name__ == "__main__":
     # Heun parameters
-    q = 1.92837 * 1e6 + 1j*0
-    a = -1.10193 * 1e8 + 1j*0
-    alpha = -1 + 1j*0
-    beta = 3/2 + 1j*0
-    gamma = 0.5 + 1j*0
-    delta = 0.5 + 1j*0
+    q_param = 1.92837 * 1e6 + 1j*0
+    a_param = -1.10193 * 1e8 + 1j*0
+    alpha_param = -1 + 1j*0
+    beta_param = 3/2 + 1j*0
+    gamma_param = 0.5 + 1j*0
+    delta_param = 0.5 + 1j*0
 
     # Boundary conditions
-    Hl_0 = 0
-    Hl_0_prime = 1
+    init_val = 0
+    init_slope = 1
 
     # Domain
     z_min = 1 + BUFFER
@@ -142,7 +141,8 @@ if __name__ == "__main__":
     z = np.linspace(z_min, z_max, N)
 
     start = time.perf_counter()
-    y = Heun(1 - a, alpha*beta - q, alpha, beta, delta, gamma, 1 - z)
+    y = heun(1 - a_param, alpha_param*beta_param - q_param,
+             alpha_param, beta_param, delta_param, gamma_param, 1 - z)
     end = time.perf_counter()
 
     print(end - start)

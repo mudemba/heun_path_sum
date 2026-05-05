@@ -1,7 +1,6 @@
 """A module for computing Heun functions via the BGT method"""
 
 import numpy as np
-from scipy.special import hyp2f1
 from scipy.linalg import solve_triangular
 from matplotlib import pyplot as plt
 import time

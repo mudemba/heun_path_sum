@@ -1,14 +1,6 @@
 """A module for computing Heun functions via the BGT method"""
-import time
 import numpy as np
 from scipy.linalg import solve_triangular
-from matplotlib import pyplot as plt
-
-N = 1000
-IDENTITY_MATRIX = np.identity(N)
-BUFFER = 1e-9
-V = np.zeros(N, dtype=complex)
-V[0] = 1
 
 
 def heun_eq_coeff_1(z_range: np.ndarray,
@@ -61,6 +53,7 @@ def get_kernel_2(x_vec, q_vec, z_range) -> np.ndarray:
 def get_neumann_sum(matrix_kernel, delta_z):
     """Returns"""
     diagonal = np.diag(np.diag(matrix_kernel))
+    id = np.identity(N)
 
     lhs = IDENTITY_MATRIX - delta_z*matrix_kernel + 0.5*delta_z*diagonal
 
@@ -71,7 +64,7 @@ def get_neumann_sum(matrix_kernel, delta_z):
     return neumann_sum
 
 
-def path_ordered_exp_1(x_vec: np.ndarray, y_vec: np.ndarray, delta_z: float) -> np.ndarray:
+def path_ordered_exp_1(x_vec: np.ndarray, y_vec: np.ndarray, delta_z: float, H0) -> np.ndarray:
     """Returns the contribution to the path-ordered exponential from K_1"""
     kernel_1 = get_kernel_1(x_vec, y_vec, delta_z)
     green_1 = get_neumann_sum(kernel_1, delta_z)
@@ -83,7 +76,7 @@ def path_ordered_exp_1(x_vec: np.ndarray, y_vec: np.ndarray, delta_z: float) -> 
 
 
 def path_ordered_exp_2(q_vec: np.ndarray, x_vec: np.ndarray,
-                       delta_z: float, z_range: np.ndarray) -> np.ndarray:
+                       delta_z: float, z_range: np.ndarray, H0, H0_PRIME) -> np.ndarray:
     """Returns the contribution to the path-ordered exponential from K_2"""
     kernel_2 = get_kernel_2(x_vec, q_vec, z_range)
     green_2 = get_neumann_sum(kernel_2, delta_z)
@@ -103,50 +96,24 @@ def path_ordered_exp_2(q_vec: np.ndarray, x_vec: np.ndarray,
     return (H0_PRIME - H0) * res_2
 
 
-def heun(a: complex, q: complex,
-         alpha: complex, beta: complex, gamma: complex, delta: complex,
-         z_range: np.ndarray) -> np.ndarray:
+def path_sum(init_conditions: list, params: list, z_range: np.ndarray) -> np.ndarray:
     """Returns the R matrix, whose first column approximates the solution to the Heun equation"""
+    a, q = params[0], params[1]
+    alpha, beta, gamma, delta = params[2], params[3], params[4], params[5]
     epsilon = alpha + beta + 1 - gamma - delta
-    delta_z = (z_range[-1] - z_range[0])/N
+
+    N = len(z_range)
+    H0, H0_PRIME = init_conditions[0], init_conditions[1]
+    delta_z = (z_range[-1] - z_range[0])/(N - 1)
 
     p_func = heun_eq_coeff_1(z_range, a, gamma, delta, epsilon)
     q_func = heun_eq_coeff_0(z_range, a, q, alpha, beta)
     x_func = - p_func - q_func - 1
     y_func = weight_func(z_range, a, gamma, delta, epsilon)
 
-    heun_function = path_ordered_exp_1(x_func, y_func, delta_z)
+    heun_function = path_ordered_exp_1(x_func, y_func, delta_z, H0)
 
     heun_function += path_ordered_exp_2(q_func,
-                                        x_func, delta_z, z_range)
+                                        x_func, delta_z, z_range, H0, H0_PRIME)
 
     return heun_function
-
-
-if __name__ == "__main__":
-    # Heun parameters
-    Q = 1.92837 * 1e6 + 1j*0
-    A = -1.10193 * 1e8 + 1j*0
-    ALPHA = -1 + 1j*0
-    BETA = 3/2 + 1j*0
-    GAMMA = 0.5 + 1j*0
-    DELTA = 0.5 + 1j*0
-
-    # Boundary conditions
-    H0 = 0
-    H0_PRIME = 1
-
-    # Domain
-    Z_MIN = 1 + BUFFER
-    # z_max = 8.64359*1e6
-    Z_MAX = 2
-    Z = np.linspace(Z_MIN, Z_MAX, N)
-
-    start = time.perf_counter()
-    y = heun(1 - A, ALPHA * BETA - Q, ALPHA, BETA, DELTA, GAMMA, 1 - Z)
-    end = time.perf_counter()
-
-    print(end - start)
-
-    plt.plot(Z, y)
-    plt.show()

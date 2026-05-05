@@ -7,7 +7,6 @@ import time
 
 N = 1000
 IDENTITY_MATRIX = np.identity(N)
-ZEROS_MATRIX = np.zeros((N, N), dtype=complex)
 BUFFER = 1e-9
 V = np.zeros(N, dtype=complex)
 V[0] = 1
@@ -84,7 +83,7 @@ def get_K_matrix(K_number: int) -> np.ndarray:
     if K_number == 2:
         return get_K_2_matrix()
 
-    return ZEROS_MATRIX
+    return np.zeros((N, N))
 
 
 def get_G_column(G_number: int):

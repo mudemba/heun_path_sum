@@ -141,7 +141,7 @@ if __name__ == "__main__":
     BUFFER = 1e-11
 
     Z_MIN = 0.1
-    Z_MAX = 50
+    Z_MAX = 0.5
     Z = np.linspace(Z_MIN, Z_MAX, N)
 
     start = time.perf_counter()
@@ -150,9 +150,14 @@ if __name__ == "__main__":
 
     print(end - start)
 
-    plt.plot(Z, y)
-
+    plt.subplot(1, 2, 1)
+    plt.plot(Z, np.real(y))
     plt.xlabel("$z$")
-    plt.ylabel("$Hl(z)$")
+    plt.ylabel("$Re(Hl(z))$")
+
+    plt.subplot(1, 2, 2)
+    plt.plot(Z, np.imag(y))
+    plt.xlabel("$z$")
+    plt.ylabel("$Im(Hl(z))$")
 
     plt.show()

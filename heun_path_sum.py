@@ -38,11 +38,11 @@ def get_kernel_1(x_vec, y_vec, delta_z) -> np.ndarray:
     return kernel
 
 
-def get_kernel_2(x_vec, q_vec, z_range, points) -> np.ndarray:
+def get_kernel_2(x_vec, q_vec, z_range) -> np.ndarray:
     """Returns an array which is the matrix form of K_2"""
     exp_vec = np.exp(z_range)
 
-    x_times_e, inv_exp = np.meshgrid(x_vec * exp_vec, 1/exp_vec)
+    x_times_e, inv_exp = np.meshgrid(x_vec * exp_vec, 1/exp_vec, sparse=False)
     q_rows, _ = np.meshgrid(q_vec, q_vec, sparse=False)
 
     kernel = x_times_e*inv_exp + q_rows
@@ -54,12 +54,11 @@ def get_neumann_sum(matrix_kernel, delta_z, points):
     """Returns"""
     diagonal = np.diag(np.diag(matrix_kernel))
     identity = np.identity(points)
-    v = np.zeros(points)
-    v[0] = 1
+    v = np.transpose(identity[0])
 
     lhs = identity - delta_z*matrix_kernel + 0.5*delta_z*diagonal
 
-    neumann_sum = (1/delta_z)*(solve_triangular(lhs, v, trans=1))
+    neumann_sum = (1/delta_z)*(solve_triangular(lhs, v) - v)
 
     neumann_sum[0] = 0
 
@@ -82,7 +81,7 @@ def path_ordered_exp_2(q_vec: np.ndarray, x_vec: np.ndarray,
                        delta_z: float, z_range: np.ndarray, points) -> np.ndarray:
     """Returns the second contribution to the path-ordered exponential.
     Computation chain: kernel K_2 -> Green's function G_2 -> path-ordered exponential U_12"""
-    kernel_2 = get_kernel_2(x_vec, q_vec, z_range, points)
+    kernel_2 = get_kernel_2(x_vec, q_vec, z_range)
     green_2 = get_neumann_sum(kernel_2, delta_z, points)
 
     exp_g_2 = np.exp(-z_range)*green_2

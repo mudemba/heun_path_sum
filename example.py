@@ -21,7 +21,7 @@ BUFFER = 1e-9
 
 Z_MIN = 0 + BUFFER
 # z_max = 8.64359*1e6
-Z_MAX = 10
+Z_MAX = 0.5
 Z = np.linspace(Z_MIN, Z_MAX, N)
 
 start = time.perf_counter()

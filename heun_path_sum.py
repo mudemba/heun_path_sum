@@ -100,15 +100,16 @@ def path_ordered_exp_2(q_vec: np.ndarray, x_vec: np.ndarray,
     return (init_slope - init_val) * res_2
 
 
-def path_sum(init_conditions: list, params: list, z_range: np.ndarray) -> np.ndarray:
+def heun(z_range: np.ndarray, *,
+         a: complex, q: complex,
+         alpha: complex, beta: complex, gamma: complex, delta: complex) -> np.ndarray:
     """Returns the R matrix, whose first column approximates the solution to the Heun equation"""
-    a, q = params[0], params[1]
-    alpha, beta, gamma, delta = params[2], params[3], params[4], params[5]
     epsilon = 1 + alpha + beta - gamma - delta
 
     points = len(z_range)
-    init_val, init_slope = init_conditions[0], init_conditions[1]
     delta_z = (z_range[-1] - z_range[0])/(points - 1)
+    direction = np.sign(z_range[-1] - z_range[0])
+    init_val, init_slope = 1, direction*q/(gamma*a)
 
     p_func = heun_eq_coeff_1(z_range, a, gamma, delta, epsilon)
     q_func = heun_eq_coeff_0(z_range, a, q, alpha, beta)

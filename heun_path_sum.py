@@ -58,13 +58,12 @@ def neumann_sum(matrix_kernel: np.ndarray, delta_z: float, points: int) -> np.nd
     which is equivalent to the inverse *-resolvent of 1 - kernel"""
     diagonal = np.diag(np.diag(matrix_kernel))
     identity = np.identity(points)
-    v = identity[0]
+    v = np.zeros(points)
+    v[0] = 1
 
     lhs = identity - delta_z*matrix_kernel + 0.5*delta_z*diagonal
 
-    n_sum = (1/delta_z)*(solve_triangular(lhs, v, trans=1))
-
-    n_sum[0] = 0
+    n_sum = (1/delta_z)*(solve_triangular(lhs, v, trans=1) - v)
 
     return n_sum
 
@@ -84,18 +83,19 @@ def path_ordered_exp_2(q_vec: np.ndarray, x_vec: np.ndarray,
                        delta_z: float, z_range: np.ndarray, points: int) -> np.ndarray:
     """Returns the second contribution to the path-ordered exponential.
     Computation chain: kernel K_2 -> Green's function G_2 -> path-ordered exponential U_12"""
-    kernel_2 = get_kernel_2(x_vec, q_vec, z_range)
-    green_2 = neumann_sum(kernel_2, delta_z, points)
+    kernel = get_kernel_2(x_vec, q_vec, z_range)
+    green = neumann_sum(kernel, delta_z, points)
 
-    exp_g_2 = np.exp(-z_range)*green_2
-    sum_exp_g_2 = cumulative_trapezoid(exp_g_2, dx=delta_z, axis=0, initial=0)
-    res_g_2 = np.exp(z_range)*sum_exp_g_2
+    exp_green = np.exp(-z_range)*green
+    int_part_1 = cumulative_trapezoid(
+        exp_green, dx=delta_z, axis=0, initial=0)
+    int_part_1 = np.exp(z_range)*int_part_1
 
-    int_g_2 = cumulative_trapezoid(green_2, dx=delta_z, axis=0, initial=0)
+    int_part_2 = cumulative_trapezoid(green, dx=delta_z, axis=0, initial=0)
 
-    res_2 = np.exp(z_range-z_range[0]) - 1 + res_g_2 - int_g_2
+    contribution = np.exp(z_range-z_range[0]) - 1 + int_part_1 - int_part_2
 
-    return res_2
+    return contribution
 
 
 def heun(z_range: np.ndarray, *, a: complex, q: complex,
@@ -119,7 +119,7 @@ def heun(z_range: np.ndarray, *, a: complex, q: complex,
     heun_function = init_val*path_ordered_exp_1(
         x_func, y_func, delta_z, points)
 
-    heun_function += (init_val - init_slope)*path_ordered_exp_2(q_func,
+    heun_function += (init_slope - init_val)*path_ordered_exp_2(q_func,
                                                                 x_func, delta_z, z_range, points)
 
     return heun_function

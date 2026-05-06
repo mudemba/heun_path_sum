@@ -137,7 +137,7 @@ if __name__ == "__main__":
     DELTA = 4.32 + 1j*0
 
     # Domain definition
-    N = 100
+    N = 10
     BUFFER = 1e-11
 
     Z_MIN = 0.1

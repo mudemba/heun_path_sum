@@ -1,4 +1,4 @@
-"""A script demonstrating proper use of the function path_sum() from the module heun"""
+"""A script demonstrating proper use of the method heun() from the module heun_path_sum"""
 
 import time
 import numpy as np
@@ -17,7 +17,7 @@ PARAMS = [A, Q, ALPHA, BETA, GAMMA, DELTA]
 
 # Domain definition
 N = 1000
-BUFFER = 1e-9
+BUFFER = 1e-11
 
 Z_MIN = 0 + BUFFER
 # z_max = 8.64359*1e6

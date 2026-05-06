@@ -62,7 +62,7 @@ def neumann_sum(matrix_kernel: np.ndarray, delta_z: float, points: int) -> np.nd
 
     lhs = identity - delta_z*matrix_kernel + 0.5*delta_z*diagonal
 
-    n_sum = (1/delta_z)*(solve_triangular(lhs, v, trans=1) - v)
+    n_sum = (1/delta_z)*(solve_triangular(lhs, v, trans=1))
 
     n_sum[0] = 0
 
@@ -106,7 +106,6 @@ def heun(z_range: np.ndarray, *, a: complex, q: complex,
     z0 = z_range[0]
     points = len(z_range)
     delta_z = (z_range[-1] - z0)/(points - 1)
-    direction = np.sign(z_range[-1] - z0)
     init_val = 1 + q*z0/(gamma*a) + (z0**2)*(q**2 - a*alpha*beta +
                                              q*(1+alpha+beta+a*gamma+delta*(a-1)))/(2*a**2*gamma*(1+gamma))
     init_slope = q/(gamma*a) + z0*(q**2 - a*alpha*beta +

@@ -71,10 +71,8 @@ def path_ordered_exp_1(x_vec: np.ndarray, y_vec: np.ndarray, delta_z: float, poi
     kernel = get_kernel_1(x_vec, y_vec, delta_z)
     green = get_neumann_sum(kernel, delta_z, points)
 
-    int_g_1 = 0.5*delta_z*(green[0:points - 1] + green[1:points])
-    int_g_1 = np.insert(int_g_1, 0, 0, axis=0)
-    int_g_1 = np.cumsum(int_g_1)
-    return 1 + int_g_1
+    integral_of_green = cumulative_trapezoid(green, dx=delta_z, initial=0)
+    return 1 + integral_of_green
 
 
 def path_ordered_exp_2(q_vec: np.ndarray, x_vec: np.ndarray,

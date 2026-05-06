@@ -99,6 +99,11 @@ def path_ordered_exp_2(q_vec: np.ndarray, x_vec: np.ndarray,
     return contribution
 
 
+def subdivide(z_range: np.ndarray, subintervals: int, subinterval_points: int):
+
+    return None
+
+
 def heun(z_range: np.ndarray, *, a: complex, q: complex,
          alpha: complex, beta: complex, gamma: complex, delta: complex) -> np.ndarray:
     """Returns the R matrix, whose first column approximates the solution to the Heun equation"""
@@ -137,7 +142,7 @@ if __name__ == "__main__":
     DELTA = 4.32 + 1j*0
 
     # Domain definition
-    N = 10
+    N = 50
     BUFFER = 1e-11
 
     Z_MIN = 0.1
@@ -148,7 +153,7 @@ if __name__ == "__main__":
     y = heun(Z, a=A, q=Q, alpha=ALPHA, beta=BETA, gamma=GAMMA, delta=DELTA)
     end = time.perf_counter()
 
-    print(end - start)
+    print(f"Evaluation completed in {end - start} seconds.")
 
     plt.subplot(1, 2, 1)
     plt.plot(Z, np.real(y))

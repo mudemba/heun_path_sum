@@ -1,6 +1,7 @@
-"""A module for computing Heun functions via the BGT method"""
+"""A module for computing Heun functions via the BGT path sum method"""
 import numpy as np
 from scipy.linalg import solve_triangular
+from scipy.integrate import cumulative_trapezoid
 
 
 def heun_eq_coeff_1(z_range: np.ndarray,
@@ -20,32 +21,31 @@ def weight_func(z_range, a, gamma, delta, epsilon):
     return (z_range**gamma) * ((z_range - 1)**delta) * ((a - z_range)**epsilon) * np.exp(z_range)
 
 
-def get_kernel_1(x_vec, y_vec, delta_z, points) -> np.ndarray:
+def get_kernel_1(x_vec, y_vec, delta_z) -> np.ndarray:
     """Returns an array which is the matrix form of K_1"""
     integrand = x_vec * y_vec
-    consecutive_integrals = 0.5*(integrand[0:points-1] + integrand[1:points])
-    consecutive_integrals = np.insert(consecutive_integrals, 0, 0, axis=0)
 
-    cumulative_sums = np.cumsum(consecutive_integrals)
+    cumulative_sums = cumulative_trapezoid(integrand, dx=delta_z, initial=0)
 
     kx, ky = np.meshgrid(cumulative_sums, cumulative_sums, sparse=False)
+
     kernel = kx - ky
 
-    prefactor, _ = np.meshgrid(y_vec, y_vec, sparse=False)
+    divisor, _ = np.meshgrid(y_vec, y_vec, sparse=False)
 
-    kernel = kernel/prefactor
+    kernel = 1 + kernel/divisor
 
-    kernel = 1 + delta_z*kernel
     return kernel
 
 
 def get_kernel_2(x_vec, q_vec, z_range, points) -> np.ndarray:
     """Returns an array which is the matrix form of K_2"""
-    kernel = np.zeros((points, points), dtype=complex)
+    exp_vec = np.exp(z_range)
 
-    # Can we vectorise this?
-    for i in range(points):
-        kernel[i] = np.real(np.exp(-z_range)*np.exp(z_range[i])*x_vec + q_vec)
+    x_times_e, inv_exp = np.meshgrid(x_vec * exp_vec, 1/exp_vec)
+    q_rows, _ = np.meshgrid(q_vec, q_vec, sparse=False)
+
+    kernel = x_times_e*inv_exp + q_rows
 
     return kernel
 
@@ -66,22 +66,22 @@ def get_neumann_sum(matrix_kernel, delta_z, points):
     return neumann_sum
 
 
-def path_ordered_exp_1(x_vec: np.ndarray, y_vec: np.ndarray, delta_z: float,
-                       init_val, points) -> np.ndarray:
-    """Returns the contribution to the path-ordered exponential from K_1"""
-    kernel_1 = get_kernel_1(x_vec, y_vec, delta_z, points)
-    green_1 = get_neumann_sum(kernel_1, delta_z, points)
+def path_ordered_exp_1(x_vec: np.ndarray, y_vec: np.ndarray, delta_z: float, points) -> np.ndarray:
+    """Returns the first contribution to the path-ordered exponential.
+    Computation chain: kernel K_1 -> Green's function G_1 -> path-ordered exponential U_11"""
+    kernel = get_kernel_1(x_vec, y_vec, delta_z)
+    green = get_neumann_sum(kernel, delta_z, points)
 
-    int_g_1 = 0.5*delta_z*(green_1[0:points - 1] + green_1[1:points])
+    int_g_1 = 0.5*delta_z*(green[0:points - 1] + green[1:points])
     int_g_1 = np.insert(int_g_1, 0, 0, axis=0)
     int_g_1 = np.cumsum(int_g_1)
-    return init_val*(1 + int_g_1)
+    return 1 + int_g_1
 
 
 def path_ordered_exp_2(q_vec: np.ndarray, x_vec: np.ndarray,
-                       delta_z: float, z_range: np.ndarray,
-                       init_val, init_slope, points) -> np.ndarray:
-    """Returns the contribution to the path-ordered exponential from K_2"""
+                       delta_z: float, z_range: np.ndarray, points) -> np.ndarray:
+    """Returns the second contribution to the path-ordered exponential.
+    Computation chain: kernel K_2 -> Green's function G_2 -> path-ordered exponential U_12"""
     kernel_2 = get_kernel_2(x_vec, q_vec, z_range, points)
     green_2 = get_neumann_sum(kernel_2, delta_z, points)
 
@@ -97,11 +97,10 @@ def path_ordered_exp_2(q_vec: np.ndarray, x_vec: np.ndarray,
 
     res_2 = np.exp(z_range-z_range[0]) - 1 + res_g_2 - int_g_2
 
-    return (init_slope - init_val) * res_2
+    return res_2
 
 
-def heun(z_range: np.ndarray, *,
-         a: complex, q: complex,
+def heun(z_range: np.ndarray, *, a: complex, q: complex,
          alpha: complex, beta: complex, gamma: complex, delta: complex) -> np.ndarray:
     """Returns the R matrix, whose first column approximates the solution to the Heun equation"""
     epsilon = 1 + alpha + beta - gamma - delta
@@ -116,10 +115,10 @@ def heun(z_range: np.ndarray, *,
     x_func = - p_func - q_func - 1
     y_func = weight_func(z_range, a, gamma, delta, epsilon)
 
-    heun_function = path_ordered_exp_1(
-        x_func, y_func, delta_z, init_val, points)
+    heun_function = init_val*path_ordered_exp_1(
+        x_func, y_func, delta_z, points)
 
-    heun_function += path_ordered_exp_2(q_func,
-                                        x_func, delta_z, z_range, init_val, init_slope, points)
+    heun_function += (init_val - init_slope)*path_ordered_exp_2(q_func,
+                                                                x_func, delta_z, z_range, points)
 
     return heun_function

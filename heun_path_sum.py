@@ -1,9 +1,9 @@
 """A module for computing Heun functions via the BGT path sum method"""
-import time
+import time  # remove in final version
 import numpy as np
 from scipy.linalg import solve_triangular
 from scipy.integrate import cumulative_trapezoid
-from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt  # remove in final version
 
 
 def heun_eq_coeff_1(z_range: np.ndarray,
@@ -127,6 +127,7 @@ def heun(z_range: np.ndarray, *, a: complex, q: complex,
     return heun_function
 
 
+# remove in final version
 if __name__ == "__main__":
     # Heun parameters
     A = 4.3 + 1j*0

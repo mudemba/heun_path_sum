@@ -21,7 +21,7 @@ def heun_eq_coeff_0(z_range: np.ndarray,
 def weight_func(z_range: np.ndarray,
                 a: complex, gamma: complex, delta: complex, epsilon: complex) -> np.ndarray:
     """The factor in the integrand of J(z) which precedes X(z)"""
-    return (z_range**gamma) * ((z_range - 1)**delta) * ((a - z_range)**epsilon) * np.exp(z_range)
+    return (z_range**gamma) * ((z_range - 1)**delta) * ((a - z_range)**epsilon)
 
 
 def get_kernel_1(x_vec: np.ndarray, y_vec: np.ndarray, delta_z: float) -> np.ndarray:
@@ -142,7 +142,7 @@ if __name__ == "__main__":
     BUFFER = 1e-11
 
     Z_MIN = 0.1
-    Z_MAX = 0.5
+    Z_MAX = 1000
     Z = np.linspace(Z_MIN, Z_MAX, N)
 
     start = time.perf_counter()

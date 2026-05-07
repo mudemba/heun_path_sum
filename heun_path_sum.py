@@ -99,11 +99,6 @@ def path_ordered_exp_2(q_vec: np.ndarray, x_vec: np.ndarray,
     return contribution
 
 
-def subdivide(z_range: np.ndarray, subintervals: int, subinterval_points: int):
-
-    return None
-
-
 def heun(z_range: np.ndarray, *, a: complex, q: complex,
          alpha: complex, beta: complex, gamma: complex, delta: complex) -> np.ndarray:
     """Returns the R matrix, whose first column approximates the solution to the Heun equation"""

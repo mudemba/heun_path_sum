@@ -24,15 +24,16 @@ def weight_func(z_range: np.ndarray,
     return (z_range**gamma) * ((z_range - 1)**delta) * ((a - z_range)**epsilon)
 
 
-def get_kernel_1(x_vec: np.ndarray, y_vec: np.ndarray, delta_z: float) -> np.ndarray:
+def get_kernel_1(z_range, x_vec: np.ndarray, y_vec: np.ndarray, delta_z: float, points) -> np.ndarray:
     """Returns an array which is the matrix form of K_1"""
+    ky = np.zeros((points, points), dtype=complex)
+    kernel = np.zeros((points, points), dtype=complex)
     integrand = x_vec * y_vec
 
-    cumulative_traps = cumulative_trapezoid(integrand, dx=delta_z, initial=0)
-
-    kx, ky = np.meshgrid(cumulative_traps, cumulative_traps, sparse=False)
-
-    kernel = kx - ky
+    for j in range(points):
+        ky = cumulative_trapezoid(
+            integrand*np.exp(z_range - z_range[j]), dx=delta_z, initial=0)
+        kernel[:, j] = ky[j] - ky
 
     divisor, _ = np.meshgrid(y_vec, y_vec, sparse=False)
 
@@ -68,11 +69,11 @@ def neumann_sum(matrix_kernel: np.ndarray, delta_z: float, points: int) -> np.nd
     return n_sum
 
 
-def path_ordered_exp_1(x_vec: np.ndarray, y_vec: np.ndarray,
+def path_ordered_exp_1(z_range, x_vec: np.ndarray, y_vec: np.ndarray,
                        delta_z: float, points: int) -> np.ndarray:
     """Returns the first contribution to the path-ordered exponential.
     Computation chain: kernel K_1 -> Green's function G_1 -> path-ordered exponential U_11"""
-    kernel = get_kernel_1(x_vec, y_vec, delta_z)
+    kernel = get_kernel_1(z_range, x_vec, y_vec, delta_z, points)
     green = neumann_sum(kernel, delta_z, points)
 
     integral_of_green = cumulative_trapezoid(
@@ -118,8 +119,8 @@ def heun(z_range: np.ndarray, *, a: complex, q: complex,
     x_func = - p_func - q_func - 1
     y_func = weight_func(z_range, a, gamma, delta, epsilon)
 
-    heun_function = init_val*path_ordered_exp_1(
-        x_func, y_func, delta_z, points)
+    heun_function = init_val*path_ordered_exp_1(z_range,
+                                                x_func, y_func, delta_z, points)
 
     heun_function += (init_slope - init_val)*path_ordered_exp_2(q_func,
                                                                 x_func, delta_z, z_range, points)
@@ -138,11 +139,11 @@ if __name__ == "__main__":
     DELTA = 4.32 + 1j*0
 
     # Domain definition
-    N = 50
-    BUFFER = 1e-11
+    N = 100
+    # BUFFER = 1e-11
 
-    Z_MIN = 0.1
-    Z_MAX = 1000
+    Z_MIN = 0.01
+    Z_MAX = 0.5
     Z = np.linspace(Z_MIN, Z_MAX, N)
 
     start = time.perf_counter()

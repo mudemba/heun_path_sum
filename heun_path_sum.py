@@ -86,19 +86,15 @@ def path_ordered_exp_2(q_vec: np.ndarray, x_vec: np.ndarray,
     kernel = get_kernel_2(x_vec, q_vec, z_range, points)
     green = neumann_sum(kernel, delta_z, points)
 
-    # exp_green = np.exp(-z_range)*green
-    # int_part_1 = cumulative_trapezoid(
-    #     exp_green, dx=delta_z, axis=0, initial=0)
-    # int_part_1 = np.exp(z_range)*int_part_1
-
-    int_part_1 = np.zeros(points, dtype=complex)
+    int_part_1 = np.zeros((points, points), dtype=complex)
     for i in range(points):
         int_part_1[i] = cumulative_trapezoid(
-            green*np.exp(z_range[i] - z_range))
+            green*np.exp(z_range[i] - z_range), dx=delta_z, axis=0, initial=0)
 
     int_part_2 = cumulative_trapezoid(green, dx=delta_z, axis=0, initial=0)
 
-    contribution = np.exp(z_range-z_range[0]) - 1 + int_part_1 - int_part_2
+    contribution = np.exp(
+        z_range-z_range[0]) - 1 + np.diag(int_part_1) - int_part_2
 
     return contribution
 

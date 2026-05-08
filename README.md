@@ -4,4 +4,4 @@ An implementation of an algorithm to compute Heun functions, as presented in [Co
 - [ ] Implement the subdivision algorithm
 - [x] Expand functionality to include complex numbers
 - [ ] ~~Add asymptotic approximation for large arguments~~
-- [x] Refactor functions which use `exp()` such that `exp()` only takes bounded differences as input
+- [x] Refactor such that every `exp()` only takes bounded differences as input

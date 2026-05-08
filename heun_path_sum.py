@@ -42,14 +42,12 @@ def get_kernel_1(z_range, x_vec: np.ndarray, y_vec: np.ndarray, delta_z: float, 
     return kernel
 
 
-def get_kernel_2(x_vec: np.ndarray, q_vec: np.ndarray, z_range: np.ndarray) -> np.ndarray:
+def get_kernel_2(x_vec: np.ndarray, q_vec: np.ndarray, z_range: np.ndarray, points) -> np.ndarray:
     """Returns an array which is the matrix form of K_2"""
-    exp_vec = np.exp(z_range)
+    kernel = np.zeros((points, points), dtype=complex)
 
-    x_times_e, exp = np.meshgrid(x_vec * exp_vec, exp_vec, sparse=False)
-    q_rows, _ = np.meshgrid(q_vec, q_vec, sparse=False)
-
-    kernel = x_times_e/exp + q_rows
+    for i in range(points):
+        kernel[i] = x_vec*np.exp(z_range - z_range[i]) + q_vec
 
     return kernel
 
@@ -85,7 +83,7 @@ def path_ordered_exp_2(q_vec: np.ndarray, x_vec: np.ndarray,
                        delta_z: float, z_range: np.ndarray, points: int) -> np.ndarray:
     """Returns the second contribution to the path-ordered exponential.
     Computation chain: kernel K_2 -> Green's function G_2 -> path-ordered exponential U_12"""
-    kernel = get_kernel_2(x_vec, q_vec, z_range)
+    kernel = get_kernel_2(x_vec, q_vec, z_range, points)
     green = neumann_sum(kernel, delta_z, points)
 
     exp_green = np.exp(-z_range)*green

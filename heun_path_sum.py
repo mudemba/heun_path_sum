@@ -141,8 +141,8 @@ if __name__ == "__main__":
     N = 100
     # BUFFER = 1e-11
 
-    Z_MIN = 50
-    Z_MAX = 55
+    Z_MIN = 650
+    Z_MAX = 700
     Z = np.linspace(Z_MIN, Z_MAX, N)
 
     start = time.perf_counter()

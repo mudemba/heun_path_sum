@@ -24,7 +24,7 @@ def weight_func(z_range: np.ndarray,
     return (z_range**gamma) * ((z_range - 1)**delta) * ((a - z_range)**epsilon)
 
 
-def get_kernel_1(z_range, x_vec: np.ndarray, y_vec: np.ndarray, delta_z: float, points) -> np.ndarray:
+def get_kernel_1(z_range, x_vec: np.ndarray, y_vec: np.ndarray, delta_z: float, points: int) -> np.ndarray:
     """Returns an array which is the matrix form of K_1"""
     ky = np.zeros((points, points), dtype=complex)
     kernel = np.zeros((points, points), dtype=complex)
@@ -42,7 +42,7 @@ def get_kernel_1(z_range, x_vec: np.ndarray, y_vec: np.ndarray, delta_z: float, 
     return kernel
 
 
-def get_kernel_2(x_vec: np.ndarray, q_vec: np.ndarray, z_range: np.ndarray, points) -> np.ndarray:
+def get_kernel_2(x_vec: np.ndarray, q_vec: np.ndarray, z_range: np.ndarray, points: int) -> np.ndarray:
     """Returns an array which is the matrix form of K_2"""
     kernel = np.zeros((points, points), dtype=complex)
 

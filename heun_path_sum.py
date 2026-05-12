@@ -166,11 +166,11 @@ if __name__ == "__main__":
     DELTA = 4.32 + 1j*0
 
     # Domain definition
-    N = 1000
+    N = 100000
     # BUFFER = 1e-11
 
     Z_MIN = 0.01
-    Z_MAX = 0.5
+    Z_MAX = 500
     Z = np.linspace(Z_MIN, Z_MAX, N)
 
     start = time.perf_counter()

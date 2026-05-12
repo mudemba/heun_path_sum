@@ -132,8 +132,8 @@ def heun(z_range: np.ndarray, *, a: complex, q: complex,
     init_slope = q/(gamma*a) + z0*(q**2 - a*alpha*beta +
                                    q*(1+alpha+beta+a*gamma+delta*(a-1)))/(a**2*gamma*(1+gamma))
 
-    total_points = len(z_range)
-    delta_z = (z_range[-1] - z0)/(total_points - 1)
+    # total_points = len(z_range)
+    delta_z = z_range[1] - z_range[0]
 
     subintervals = subdivide_domain(z_range)
     heun_function = np.array([])
@@ -170,7 +170,7 @@ if __name__ == "__main__":
     # BUFFER = 1e-11
 
     Z_MIN = 1.1
-    Z_MAX = 1e5
+    Z_MAX = 1e4
     Z = np.linspace(Z_MIN, Z_MAX, N)
 
     start = time.perf_counter()
@@ -179,14 +179,14 @@ if __name__ == "__main__":
 
     print(f"Evaluation completed in {end - start} seconds.")
 
-    # plt.subplot(1, 2, 1)
-    # plt.plot(Z, np.real(y))
-    # plt.xlabel("$z$")
-    # plt.ylabel("$Re(Hl(z))$")
+    plt.subplot(1, 2, 1)
+    plt.plot(Z, np.real(y))
+    plt.xlabel("$z$")
+    plt.ylabel("$Re(Hl(z))$")
 
-    # plt.subplot(1, 2, 2)
-    # plt.plot(Z, np.imag(y))
-    # plt.xlabel("$z$")
-    # plt.ylabel("$Im(Hl(z))$")
+    plt.subplot(1, 2, 2)
+    plt.plot(Z, np.imag(y))
+    plt.xlabel("$z$")
+    plt.ylabel("$Im(Hl(z))$")
 
-    # plt.show()
+    plt.show()

@@ -99,32 +99,25 @@ def path_ordered_exp_2(q_vec: np.ndarray, x_vec: np.ndarray,
     return contribution
 
 
-def subdivide_domain(full_interval: np.ndarray, max_sub_points=100, max_sub_width=709) -> list:
-    """Subdivides the full domain into subintervals which satisfy two constraints:
-    1) Each subinterval width is less than max_sub_width, default is 709 because np.(710) = inf
-    2) Each subinterval has at most max_sub_points points, default is 100 to tame complexity of matrix algebra"""
+def subdivide_domain(domain: np.ndarray, max_sub_points=100, max_sub_width=500) -> list[np.ndarray]:
+    """ Splits an interval into subintervals, ensuring each subinterval contains no more than max_sub_points points and has a width no greater than max_sub_width."""
+    if len(domain) == 0:
+        return []
 
-    total_points = len(full_interval)
-    total_width = np.abs(full_interval[-1] - full_interval[0])
+    subdomains = []
+    start_idx = 0
 
-    # number of points in clipped interval is a multiple of max_sub_points
-    clipped_interval = clip_interval(full_interval, max_sub_points)
+    for i in range(1, len(domain)):
+        would_exceed_points = (i - start_idx + 1) > max_sub_points
+        would_exceed_width = (domain[i] - domain[start_idx]) > max_sub_width
 
-    num_subdintervals = len(clipped_interval)//max_sub_points
-    if num_subdintervals == 0:
-        return [clipped_interval]
+        if would_exceed_points or would_exceed_width:
+            # Save up to (not including) i
+            subdomains.append(domain[start_idx:i])
+            start_idx = i
 
-    subdivided_interval = np.split(clipped_interval, num_subdintervals - 1)
-    return [subdivided_interval, full_interval[len(clipped_interval) + 1:]]
-
-
-def clip_interval(full_range, subrange_points) -> np.ndarray:
-    total_points = len(full_range)
-    if total_points % subrange_points == 0:
-        return full_range
-
-    clipped_range_points = np.remainder(total_points, subrange_points)
-    return full_range[:-clipped_range_points]
+    subdomains.append(domain[start_idx:])  # Append the final subinterval
+    return subdomains
 
 
 def heun(z_range: np.ndarray, *, a: complex, q: complex,
@@ -142,18 +135,22 @@ def heun(z_range: np.ndarray, *, a: complex, q: complex,
     total_points = len(z_range)
     delta_z = (z_range[-1] - z0)/(total_points - 1)
 
-    p_func = heun_eq_coeff_1(z_range, a, gamma, delta, epsilon)
-    q_func = heun_eq_coeff_0(z_range, a, q, alpha, beta)
-    x_func = - p_func - q_func - 1
-    y_func = weight_func(z_range, a, gamma, delta, epsilon)
-
     subintervals = subdivide_domain(z_range)
+    heun_function = np.array([])
     for subinterval in subintervals:
-        heun_function = init_val*path_ordered_exp_1(z_range,
-                                                    x_func, y_func, delta_z, points)
+        points = len(subinterval)
+        p_func = heun_eq_coeff_1(subinterval, a, gamma, delta, epsilon)
+        q_func = heun_eq_coeff_0(subinterval, a, q, alpha, beta)
+        x_func = - p_func - q_func - 1
+        y_func = weight_func(subinterval, a, gamma, delta, epsilon)
+        contribution = init_val*path_ordered_exp_1(subinterval,
+                                                   x_func, y_func, delta_z, points)
 
-        heun_function += (init_slope - init_val)*path_ordered_exp_2(q_func,
-                                                                    x_func, delta_z, z_range, points)
+        contribution += (init_slope - init_val)*path_ordered_exp_2(q_func,
+                                                                   x_func, delta_z, subinterval, points)
+        heun_function = np.append(heun_function, contribution)
+        init_val = heun_function[-1]
+        init_slope = (heun_function[-1] - heun_function[-2])/delta_z
 
     return heun_function
 
@@ -169,11 +166,11 @@ if __name__ == "__main__":
     DELTA = 4.32 + 1j*0
 
     # Domain definition
-    N = 100
+    N = 1000
     # BUFFER = 1e-11
 
-    Z_MIN = 650
-    Z_MAX = 700
+    Z_MIN = 0.01
+    Z_MAX = 0.5
     Z = np.linspace(Z_MIN, Z_MAX, N)
 
     start = time.perf_counter()

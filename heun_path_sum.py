@@ -99,30 +99,58 @@ def path_ordered_exp_2(q_vec: np.ndarray, x_vec: np.ndarray,
     return contribution
 
 
+def subdivide_domain(domain: np.ndarray, max_sub_points=100, max_sub_width=500) -> list[np.ndarray]:
+    """ Splits an interval into subintervals, ensuring each subinterval contains no more than max_sub_points points and has a width no greater than max_sub_width."""
+    if len(domain) == 0:
+        return []
+
+    subdomains = []
+    start_idx = 0
+
+    for i in range(1, len(domain)):
+        would_exceed_points = (i - start_idx + 1) > max_sub_points
+        would_exceed_width = (domain[i] - domain[start_idx]) > max_sub_width
+
+        if would_exceed_points or would_exceed_width:
+            # Save up to (not including) i
+            subdomains.append(domain[start_idx:i])
+            start_idx = i
+
+    subdomains.append(domain[start_idx:])  # Append the final subinterval
+    return subdomains
+
+
 def heun(z_range: np.ndarray, *, a: complex, q: complex,
          alpha: complex, beta: complex, gamma: complex, delta: complex) -> np.ndarray:
     """Returns the R matrix, whose first column approximates the solution to the Heun equation"""
     epsilon = 1 + alpha + beta - gamma - delta
 
     z0 = z_range[0]
-    points = len(z_range)
-    delta_z = (z_range[-1] - z0)/(points - 1)
     init_val = 1 + q * z0/(gamma * a) + (z0**2) * (
         q**2 - a * alpha * beta + q *
         (1 + alpha + beta + a * gamma + delta * (a-1)))/(2 * a**2 * gamma * (1 + gamma))
     init_slope = q/(gamma*a) + z0*(q**2 - a*alpha*beta +
                                    q*(1+alpha+beta+a*gamma+delta*(a-1)))/(a**2*gamma*(1+gamma))
 
-    p_func = heun_eq_coeff_1(z_range, a, gamma, delta, epsilon)
-    q_func = heun_eq_coeff_0(z_range, a, q, alpha, beta)
-    x_func = - p_func - q_func - 1
-    y_func = weight_func(z_range, a, gamma, delta, epsilon)
+    total_points = len(z_range)
+    delta_z = (z_range[-1] - z0)/(total_points - 1)
 
-    heun_function = init_val*path_ordered_exp_1(z_range,
-                                                x_func, y_func, delta_z, points)
+    subintervals = subdivide_domain(z_range)
+    heun_function = np.array([])
+    for subinterval in subintervals:
+        points = len(subinterval)
+        p_func = heun_eq_coeff_1(subinterval, a, gamma, delta, epsilon)
+        q_func = heun_eq_coeff_0(subinterval, a, q, alpha, beta)
+        x_func = - p_func - q_func - 1
+        y_func = weight_func(subinterval, a, gamma, delta, epsilon)
+        contribution = init_val*path_ordered_exp_1(subinterval,
+                                                   x_func, y_func, delta_z, points)
 
-    heun_function += (init_slope - init_val)*path_ordered_exp_2(q_func,
-                                                                x_func, delta_z, z_range, points)
+        contribution += (init_slope - init_val)*path_ordered_exp_2(q_func,
+                                                                   x_func, delta_z, subinterval, points)
+        heun_function = np.append(heun_function, contribution)
+        init_val = heun_function[-1]
+        init_slope = (heun_function[-1] - heun_function[-2])/delta_z
 
     return heun_function
 
@@ -138,11 +166,11 @@ if __name__ == "__main__":
     DELTA = 4.32 + 1j*0
 
     # Domain definition
-    N = 100
+    N = 1000
     # BUFFER = 1e-11
 
-    Z_MIN = 650
-    Z_MAX = 700
+    Z_MIN = 0.01
+    Z_MAX = 0.5
     Z = np.linspace(Z_MIN, Z_MAX, N)
 
     start = time.perf_counter()

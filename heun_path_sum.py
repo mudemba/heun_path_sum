@@ -150,7 +150,7 @@ def heun(z_range: np.ndarray, *, a: complex, q: complex,
                                                                    x_func, delta_z, subinterval, points)
         heun_function = np.append(heun_function, contribution)
         init_val = heun_function[-1]
-        init_slope = (heun_function[-2] - heun_function[-1])/delta_z
+        init_slope = (heun_function[-1] - heun_function[-2])/delta_z
 
     return heun_function
 
@@ -170,7 +170,7 @@ if __name__ == "__main__":
     # BUFFER = 1e-11
 
     Z_MIN = 1.1
-    Z_MAX = 1e4
+    Z_MAX = 1e5
     Z = np.linspace(Z_MIN, Z_MAX, N)
 
     start = time.perf_counter()
@@ -179,14 +179,14 @@ if __name__ == "__main__":
 
     print(f"Evaluation completed in {end - start} seconds.")
 
-    plt.subplot(1, 2, 1)
-    plt.plot(Z, np.real(y))
-    plt.xlabel("$z$")
-    plt.ylabel("$Re(Hl(z))$")
+    # plt.subplot(1, 2, 1)
+    # plt.plot(Z, np.real(y))
+    # plt.xlabel("$z$")
+    # plt.ylabel("$Re(Hl(z))$")
 
-    plt.subplot(1, 2, 2)
-    plt.plot(Z, np.imag(y))
-    plt.xlabel("$z$")
-    plt.ylabel("$Im(Hl(z))$")
+    # plt.subplot(1, 2, 2)
+    # plt.plot(Z, np.imag(y))
+    # plt.xlabel("$z$")
+    # plt.ylabel("$Im(Hl(z))$")
 
-    plt.show()
+    # plt.show()

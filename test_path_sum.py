@@ -14,8 +14,7 @@ def test_clip_interval_1():
 
 def test_clip_interval_2():
     """Don't clip if the number of points is a multiple of desired number of points"""
-    interval = np.linspace(1, 100, 25)
-
+    interval = np.array([1., 2., 3., 4., 5., 6., 7., 8., 9., 10.])
     clipped_interval = clip_interval(interval, 5)
 
-    assert len(clipped_interval) == 25
+    assert len(clipped_interval) == 10

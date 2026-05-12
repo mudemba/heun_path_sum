@@ -24,7 +24,7 @@ def weight_func(z_range: np.ndarray,
     return (z_range**gamma) * ((z_range - 1)**delta) * ((a - z_range)**epsilon)
 
 
-def get_kernel_1(z_range, x_vec: np.ndarray, y_vec: np.ndarray, delta_z: float, points: int) -> np.ndarray:
+def kernel_1(z_range, x_vec: np.ndarray, y_vec: np.ndarray, delta_z: float, points: int) -> np.ndarray:
     """Returns an array which is the matrix form of K_1"""
     ky = np.zeros((points, points), dtype=complex)
     kernel = np.zeros((points, points), dtype=complex)
@@ -42,7 +42,7 @@ def get_kernel_1(z_range, x_vec: np.ndarray, y_vec: np.ndarray, delta_z: float, 
     return kernel
 
 
-def get_kernel_2(x_vec: np.ndarray, q_vec: np.ndarray, z_range: np.ndarray, points: int) -> np.ndarray:
+def kernel_2(x_vec: np.ndarray, q_vec: np.ndarray, z_range: np.ndarray, points: int) -> np.ndarray:
     """Returns an array which is the matrix form of K_2"""
     kernel = np.zeros((points, points), dtype=complex)
 
@@ -71,7 +71,7 @@ def path_ordered_exp_1(z_range, x_vec: np.ndarray, y_vec: np.ndarray,
                        delta_z: float, points: int) -> np.ndarray:
     """Returns the first contribution to the path-ordered exponential.
     Computation chain: kernel K_1 -> Green's function G_1 -> path-ordered exponential U_11"""
-    kernel = get_kernel_1(z_range, x_vec, y_vec, delta_z, points)
+    kernel = kernel_1(z_range, x_vec, y_vec, delta_z, points)
     green = neumann_sum(kernel, delta_z, points)
 
     integral_of_green = cumulative_trapezoid(
@@ -83,7 +83,7 @@ def path_ordered_exp_2(q_vec: np.ndarray, x_vec: np.ndarray,
                        delta_z: float, z_range: np.ndarray, points: int) -> np.ndarray:
     """Returns the second contribution to the path-ordered exponential.
     Computation chain: kernel K_2 -> Green's function G_2 -> path-ordered exponential U_12"""
-    kernel = get_kernel_2(x_vec, q_vec, z_range, points)
+    kernel = kernel_2(x_vec, q_vec, z_range, points)
     green = neumann_sum(kernel, delta_z, points)
 
     int_part_1 = np.zeros((points, points), dtype=complex)
@@ -99,7 +99,7 @@ def path_ordered_exp_2(q_vec: np.ndarray, x_vec: np.ndarray,
     return contribution
 
 
-def subdivide_domain(domain: np.ndarray, max_sub_points=100, max_sub_width=200) -> list[np.ndarray]:
+def subdivide_domain(domain: np.ndarray, max_sub_points=100, max_sub_width=400) -> list[np.ndarray]:
     """ Splits an interval into subintervals, ensuring each subinterval contains no more than max_sub_points points and has a width no greater than max_sub_width."""
     if len(domain) == 0:
         return []
@@ -158,23 +158,24 @@ def heun(z_range: np.ndarray, *, a: complex, q: complex,
 # remove in final version
 if __name__ == "__main__":
     # Heun parameters
-    A = 4.3 + 1j*0
-    Q = -0.2 + 1j*0
-    ALPHA = 1.3 + 1j*0
-    BETA = 0.12 + 1j*0
-    GAMMA = -0.14 + 1j*0
-    DELTA = 4.32 + 1j*0
+    A = -1.10193*1e8 + 1j*0
+    Q = 2.94766*1e7 + 1j*0
+    ALPHA = -1.0 + 1j*0
+    BETA = 1.5 + 1j*0
+    GAMMA = 0.5 + 1j*0
+    DELTA = 0.5 + 1j*0
 
     # Domain definition
-    N = 100000
-    # BUFFER = 1e-11
+    N = 10000
 
-    Z_MIN = 1.1
-    Z_MAX = 1e4
+    Z_MIN = 1.001
+    # Z_MAX = 8.64359*1e6
+    Z_MAX = 1e2
     Z = np.linspace(Z_MIN, Z_MAX, N)
 
     start = time.perf_counter()
-    y = heun(1-Z, a=A, q=Q, alpha=ALPHA, beta=BETA, gamma=GAMMA, delta=DELTA)
+    y = heun(1-Z, a=1 - A, q=ALPHA*BETA - Q, alpha=ALPHA,
+             beta=BETA, gamma=DELTA, delta=GAMMA)
     end = time.perf_counter()
 
     print(f"Evaluation completed in {end - start} seconds.")

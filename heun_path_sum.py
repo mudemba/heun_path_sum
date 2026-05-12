@@ -169,12 +169,12 @@ if __name__ == "__main__":
     N = 100000
     # BUFFER = 1e-11
 
-    Z_MIN = 0.01
+    Z_MIN = 1.1
     Z_MAX = 5
     Z = np.linspace(Z_MIN, Z_MAX, N)
 
     start = time.perf_counter()
-    y = heun(Z, a=A, q=Q, alpha=ALPHA, beta=BETA, gamma=GAMMA, delta=DELTA)
+    y = heun(1-Z, a=A, q=Q, alpha=ALPHA, beta=BETA, gamma=GAMMA, delta=DELTA)
     end = time.perf_counter()
 
     print(f"Evaluation completed in {end - start} seconds.")

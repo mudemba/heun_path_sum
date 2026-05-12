@@ -150,7 +150,7 @@ def heun(z_range: np.ndarray, *, a: complex, q: complex,
                                                                    x_func, delta_z, subinterval, points)
         heun_function = np.append(heun_function, contribution)
         init_val = heun_function[-1]
-        init_slope = (heun_function[-1] - heun_function[-2])/delta_z
+        init_slope = (heun_function[-2] - heun_function[-1])/delta_z
 
     return heun_function
 

@@ -20,7 +20,7 @@ def heun_eq_coeff_0(z_range: np.ndarray,
 
 def weight_func(z_range: np.ndarray,
                 a: complex, gamma: complex, delta: complex, epsilon: complex) -> np.ndarray:
-    """The factor in the integrand of J(z) which precedes X(z)"""
+    """The factor in the integrand of J(z) which precedes exp(z)X(z)"""
     return (z_range**gamma) * ((z_range - 1)**delta) * ((a - z_range)**epsilon)
 
 
@@ -55,8 +55,7 @@ def neumann_sum(matrix_kernel: np.ndarray, delta_z: float, points: int) -> np.nd
     which is equivalent to the inverse *-resolvent of 1 - kernel"""
     diagonal = np.diag(np.diag(matrix_kernel))
     identity = np.identity(points)
-    v = np.zeros(points)
-    v[0] = 1
+    v = identity[0]
 
     lhs = identity - delta_z*matrix_kernel + 0.5*delta_z*diagonal
 
@@ -84,15 +83,14 @@ def path_ordered_exp_2(q_vec: np.ndarray, x_vec: np.ndarray,
     kernel = kernel_2(x_vec, q_vec, z_range, points)
     green = neumann_sum(kernel, delta_z, points)
 
-    int_part_1 = np.zeros((points, points), dtype=complex)
-    for i in range(points):
-        int_part_1[i] = cumulative_trapezoid(
-            green*np.exp(z_range[i] - z_range), axis=0, initial=0)
+    exp_green = np.exp(- z_range + z_range[0])*green
+    int_exp_green = cumulative_trapezoid(exp_green, axis=0, initial=0)
+    int_part_1 = np.exp(z_range - z_range[0]) * int_exp_green
 
     int_part_2 = cumulative_trapezoid(green, axis=0, initial=0)
 
     contribution = np.exp(
-        z_range-z_range[0]) - 1 + np.diag(int_part_1) - int_part_2
+        z_range-z_range[0]) - 1 + int_part_1 - int_part_2
 
     return contribution
 
@@ -169,7 +167,7 @@ if __name__ == "__main__":
 
     Z_MIN = 1.001
     # Z_MAX = 8.64359*1e6
-    Z_MAX = 5
+    Z_MAX = 50
     Z = np.linspace(Z_MIN, Z_MAX, N)
 
     start = time.perf_counter()

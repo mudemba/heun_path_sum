@@ -26,16 +26,14 @@ def weight_func(z_range: np.ndarray,
 
 def kernel_1(z_range, x_vec: np.ndarray, y_vec: np.ndarray, delta_z: float, points: int) -> np.ndarray:
     """Returns an array which is the matrix form of K_1"""
-    ky = np.zeros((points, points), dtype=complex)
-    kernel = np.zeros((points, points), dtype=complex)
-    integrand = x_vec * y_vec
+    weight = y_vec*np.exp(z_range - z_range[0])
+    integrand = x_vec*weight
+    integral = cumulative_trapezoid(integrand, axis=0, initial=0)
 
-    for j in range(points):
-        ky = cumulative_trapezoid(
-            integrand*np.exp(z_range - z_range[j]), initial=0)
-        kernel[:, j] = ky[j] - ky
+    kx, ky = np.meshgrid(integral, integral)
+    kernel = kx - ky
 
-    divisor, _ = np.meshgrid(y_vec, y_vec, sparse=False)
+    divisor, _ = np.meshgrid(weight, weight)
 
     kernel = 1 + delta_z*kernel/divisor
 
@@ -171,7 +169,7 @@ if __name__ == "__main__":
 
     Z_MIN = 1.001
     # Z_MAX = 8.64359*1e6
-    Z_MAX = 50
+    Z_MAX = 5
     Z = np.linspace(Z_MIN, Z_MAX, N)
 
     start = time.perf_counter()

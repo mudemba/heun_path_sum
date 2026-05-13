@@ -20,22 +20,20 @@ def heun_eq_coeff_0(z_range: np.ndarray,
 
 def weight_func(z_range: np.ndarray,
                 a: complex, gamma: complex, delta: complex, epsilon: complex) -> np.ndarray:
-    """The factor in the integrand of J(z) which precedes X(z)"""
+    """The factor in the integrand of J(z) which precedes exp(z)X(z)"""
     return (z_range**gamma) * ((z_range - 1)**delta) * ((a - z_range)**epsilon)
 
 
 def kernel_1(z_range, x_vec: np.ndarray, y_vec: np.ndarray, delta_z: float, points: int) -> np.ndarray:
     """Returns an array which is the matrix form of K_1"""
-    ky = np.zeros((points, points), dtype=complex)
-    kernel = np.zeros((points, points), dtype=complex)
-    integrand = x_vec * y_vec
+    weight = y_vec*np.exp(z_range - z_range[0])
+    integrand = x_vec*weight
+    integral = cumulative_trapezoid(integrand, axis=0, initial=0)
 
-    for j in range(points):
-        ky = cumulative_trapezoid(
-            integrand*np.exp(z_range - z_range[j]), initial=0)
-        kernel[:, j] = ky[j] - ky
+    kx, ky = np.meshgrid(integral, integral)
+    kernel = kx - ky
 
-    divisor, _ = np.meshgrid(y_vec, y_vec, sparse=False)
+    divisor, _ = np.meshgrid(weight, weight)
 
     kernel = 1 + delta_z*kernel/divisor
 
@@ -57,8 +55,7 @@ def neumann_sum(matrix_kernel: np.ndarray, delta_z: float, points: int) -> np.nd
     which is equivalent to the inverse *-resolvent of 1 - kernel"""
     diagonal = np.diag(np.diag(matrix_kernel))
     identity = np.identity(points)
-    v = np.zeros(points)
-    v[0] = 1
+    v = identity[0]
 
     lhs = identity - delta_z*matrix_kernel + 0.5*delta_z*diagonal
 
@@ -86,38 +83,38 @@ def path_ordered_exp_2(q_vec: np.ndarray, x_vec: np.ndarray,
     kernel = kernel_2(x_vec, q_vec, z_range, points)
     green = neumann_sum(kernel, delta_z, points)
 
-    int_part_1 = np.zeros((points, points), dtype=complex)
-    for i in range(points):
-        int_part_1[i] = cumulative_trapezoid(
-            green*np.exp(z_range[i] - z_range), axis=0, initial=0)
+    exp_green = np.exp(- z_range + z_range[0])*green
+    int_exp_green = cumulative_trapezoid(exp_green, axis=0, initial=0)
+    int_part_1 = np.exp(z_range - z_range[0]) * int_exp_green
 
     int_part_2 = cumulative_trapezoid(green, axis=0, initial=0)
 
     contribution = np.exp(
-        z_range-z_range[0]) - 1 + np.diag(int_part_1) - int_part_2
+        z_range-z_range[0]) - 1 + int_part_1 - int_part_2
 
     return contribution
 
 
-def subdivide_domain(domain: np.ndarray, max_sub_points=100, max_sub_width=400) -> list[np.ndarray]:
+def subdivide_domain(domain: np.ndarray, max_sub_points=400, max_sub_width=400) -> list[np.ndarray]:
     """ Splits an interval into subintervals, ensuring each subinterval contains no more than 
     max_sub_points points and has a width no greater than max_sub_width."""
-    if len(domain) == 0:
+    points = len(domain)
+    if points == 0:
         return []
 
     subdomains = []
-    start_idx = 0
+    start_index = 0
 
-    for i in range(1, len(domain)):
-        would_exceed_points = (i - start_idx + 1) > max_sub_points
+    for i in range(1, points):
+        would_exceed_points = (i + 1 - start_index) > max_sub_points
         would_exceed_width = np.abs(
-            domain[i] - domain[start_idx]) > max_sub_width
+            domain[i] - domain[start_index]) > max_sub_width
 
         if would_exceed_points or would_exceed_width:
-            subdomains.append(domain[start_idx:i])
-            start_idx = i - 1
+            subdomains.append(domain[start_index:i])
+            start_index = i - 1
 
-    subdomains.append(domain[start_idx:])
+    subdomains.append(domain[start_index:])
     return subdomains
 
 
@@ -127,10 +124,9 @@ def heun(z_range: np.ndarray, *, a: complex, q: complex,
     epsilon = 1 + alpha + beta - gamma - delta
 
     z0 = z_range[0]
-    init_val = 1 + q * z0/(gamma * a)
-    init_slope = q/(gamma * a) + z0 * (-a*alpha*beta*gamma + a*(delta+gamma)*q + q*(1+alpha+beta-delta+q)) / \
+    init_val = 1 + q*z0/(gamma*a)
+    init_slope = q/(gamma*a) + z0*(-a*alpha*beta*gamma + a*(delta+gamma)*q + q*(1+alpha+beta-delta+q)) / \
         (a**2 * gamma * (1 + gamma))
-    # total_points = len(z_range)
     delta_z = z_range[1] - z0
 
     subintervals = subdivide_domain(z_range)
@@ -167,7 +163,7 @@ if __name__ == "__main__":
     DELTA = 0.5 + 1j*0
 
     # Domain definition
-    N = 10000
+    N = 100000
 
     Z_MIN = 1.001
     # Z_MAX = 8.64359*1e6

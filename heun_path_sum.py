@@ -95,25 +95,26 @@ def path_ordered_exp_2(q_vec: np.ndarray, x_vec: np.ndarray,
     return contribution
 
 
-def subdivide_domain(domain: np.ndarray, max_sub_points=100, max_sub_width=400) -> list[np.ndarray]:
+def subdivide_domain(domain: np.ndarray, max_sub_points=400, max_sub_width=400) -> list[np.ndarray]:
     """ Splits an interval into subintervals, ensuring each subinterval contains no more than 
     max_sub_points points and has a width no greater than max_sub_width."""
-    if len(domain) == 0:
+    points = len(domain)
+    if points == 0:
         return []
 
     subdomains = []
-    start_idx = 0
+    start_index = 0
 
-    for i in range(1, len(domain)):
-        would_exceed_points = (i - start_idx + 1) > max_sub_points
+    for i in range(1, points):
+        would_exceed_points = (i + 1 - start_index) > max_sub_points
         would_exceed_width = np.abs(
-            domain[i] - domain[start_idx]) > max_sub_width
+            domain[i] - domain[start_index]) > max_sub_width
 
         if would_exceed_points or would_exceed_width:
-            subdomains.append(domain[start_idx:i])
-            start_idx = i - 1
+            subdomains.append(domain[start_index:i])
+            start_index = i - 1
 
-    subdomains.append(domain[start_idx:])
+    subdomains.append(domain[start_index:])
     return subdomains
 
 
@@ -123,10 +124,9 @@ def heun(z_range: np.ndarray, *, a: complex, q: complex,
     epsilon = 1 + alpha + beta - gamma - delta
 
     z0 = z_range[0]
-    init_val = 1 + q * z0/(gamma * a)
-    init_slope = q/(gamma * a) + z0 * (-a*alpha*beta*gamma + a*(delta+gamma)*q + q*(1+alpha+beta-delta+q)) / \
+    init_val = 1 + q*z0/(gamma*a)
+    init_slope = q/(gamma*a) + z0*(-a*alpha*beta*gamma + a*(delta+gamma)*q + q*(1+alpha+beta-delta+q)) / \
         (a**2 * gamma * (1 + gamma))
-    # total_points = len(z_range)
     delta_z = z_range[1] - z0
 
     subintervals = subdivide_domain(z_range)
@@ -163,7 +163,7 @@ if __name__ == "__main__":
     DELTA = 0.5 + 1j*0
 
     # Domain definition
-    N = 10000
+    N = 100000
 
     Z_MIN = 1.001
     # Z_MAX = 8.64359*1e6

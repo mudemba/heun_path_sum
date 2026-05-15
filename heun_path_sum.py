@@ -50,14 +50,14 @@ def kernel_2(x_vec: np.ndarray, q_vec: np.ndarray, z_range: np.ndarray, points: 
     return kernel
 
 
-def neumann_sum(matrix_kernel: np.ndarray, delta_z: float, points: int) -> np.ndarray:
-    """Returns the Neumann series of the kernel matrix_kernel,
+def neumann_sum(kernel: np.ndarray, delta_z: float, points: int) -> np.ndarray:
+    """Returns the Neumann series of the kernel kernel,
     which is equivalent to the inverse *-resolvent of 1 - kernel"""
-    diagonal = np.diag(np.diag(matrix_kernel))
-    identity = np.identity(points)
+    diagonal = np.diag(np.diag(kernel))
+    identity = np.identity(points, dtype=complex)
     v = identity[0]
 
-    lhs = identity - delta_z*matrix_kernel + 0.5*delta_z*diagonal
+    lhs = identity - delta_z*kernel + 0.5*delta_z*diagonal
 
     n_sum = solve_triangular(lhs, v, trans=1) - v
 
@@ -71,9 +71,8 @@ def path_ordered_exp_1(z_range, x_vec: np.ndarray, y_vec: np.ndarray,
     kernel = kernel_1(z_range, x_vec, y_vec, delta_z, points)
     green = neumann_sum(kernel, delta_z, points)
 
-    integral_of_green = cumulative_trapezoid(
-        green, axis=0, initial=0)
-    return 1 + integral_of_green
+    int_green = cumulative_trapezoid(green, axis=0, initial=0)
+    return 1 + int_green
 
 
 def path_ordered_exp_2(q_vec: np.ndarray, x_vec: np.ndarray,
@@ -83,19 +82,18 @@ def path_ordered_exp_2(q_vec: np.ndarray, x_vec: np.ndarray,
     kernel = kernel_2(x_vec, q_vec, z_range, points)
     green = neumann_sum(kernel, delta_z, points)
 
-    exp_green = np.exp(- z_range + z_range[0])*green
+    exp_green = np.exp(-z_range + z_range[0]) * green
     int_exp_green = cumulative_trapezoid(exp_green, axis=0, initial=0)
     int_part_1 = np.exp(z_range - z_range[0]) * int_exp_green
 
     int_part_2 = cumulative_trapezoid(green, axis=0, initial=0)
 
-    contribution = np.exp(
-        z_range-z_range[0]) - 1 + int_part_1 - int_part_2
+    result = np.exp(z_range - z_range[0]) - 1 + int_part_1 - int_part_2
 
-    return contribution
+    return result
 
 
-def subdivide_domain(domain: np.ndarray, max_sub_points=1000, max_sub_width=700) -> list[np.ndarray]:
+def subdivide_domain(domain: np.ndarray, max_sub_points=1500, max_sub_width=700) -> list[np.ndarray]:
     """ Splits an interval into subintervals, ensuring each subinterval contains no more than 
     max_sub_points points and has a width no greater than max_sub_width."""
     points = len(domain)
@@ -149,8 +147,10 @@ def heun(z_range: np.ndarray, *, a: complex, q: complex,
         else:
             heun_function = np.append(heun_function, contribution[1:])
 
-        init_val = contribution[-1]
-        init_slope = (contribution[-1] - contribution[-2])/delta_z
+        init_val = heun_function[-1]
+        # three-points backwards difference
+        init_slope = (
+            3*heun_function[-1] - 4*heun_function[-2] + heun_function[-3])/(2*delta_z)
     print(heun_function[0])
     return heun_function
 
@@ -158,15 +158,15 @@ def heun(z_range: np.ndarray, *, a: complex, q: complex,
 # remove in final version
 if __name__ == "__main__":
     # Heun parameters
-    A = -1.10193*1e8 + 1j*0
-    Q = 2.94766*1e7 + 1j*0
+    A = -1.1019283813284071*1e8 + 1j*0
+    Q = 2.9476583933034893*1e7 + 1j*0
     ALPHA = -1.0 + 1j*0
     BETA = 1.5 + 1j*0
     GAMMA = 0.5 + 1j*0
     DELTA = 0.5 + 1j*0
 
     # Domain definition
-    N = 1000
+    N = 100000
 
     Z_MIN = 1.0001
     # Z_MAX = 8.64359*1e6

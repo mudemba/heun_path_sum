@@ -132,7 +132,6 @@ def heun(z_range: np.ndarray, *, a: complex, q: complex,
     subintervals = subdivide_domain(z_range)
     heun_function = np.array([init_val])
 
-    print(init_val + delta_z*init_slope)
     for subinterval in subintervals:
         points = len(subinterval)
         p_func = heun_eq_coeff_1(subinterval, a, gamma, delta, epsilon)
@@ -148,7 +147,6 @@ def heun(z_range: np.ndarray, *, a: complex, q: complex,
         heun_function = np.append(heun_function, contribution[1:])
         init_val = contribution[-1]
         init_slope = (contribution[-1] - contribution[-2])/delta_z
-    print(heun_function[1])
     return heun_function
 
 
@@ -167,7 +165,7 @@ if __name__ == "__main__":
 
     Z_MIN = 1.001
     # Z_MAX = 8.64359*1e6
-    Z_MAX = 50
+    Z_MAX = 500
     Z = np.linspace(Z_MIN, Z_MAX, N)
 
     start = time.perf_counter()

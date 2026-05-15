@@ -95,7 +95,7 @@ def path_ordered_exp_2(q_vec: np.ndarray, x_vec: np.ndarray,
     return contribution
 
 
-def subdivide_domain(domain: np.ndarray, max_sub_points=400, max_sub_width=400) -> list[np.ndarray]:
+def subdivide_domain(domain: np.ndarray, max_sub_points=1000, max_sub_width=700) -> list[np.ndarray]:
     """ Splits an interval into subintervals, ensuring each subinterval contains no more than 
     max_sub_points points and has a width no greater than max_sub_width."""
     points = len(domain)
@@ -120,7 +120,7 @@ def subdivide_domain(domain: np.ndarray, max_sub_points=400, max_sub_width=400) 
 
 def heun(z_range: np.ndarray, *, a: complex, q: complex,
          alpha: complex, beta: complex, gamma: complex, delta: complex) -> np.ndarray:
-    """Returns the R matrix, whose first column approximates the solution to the Heun equation"""
+    """Returns the first column of the matrix R, which approximates the solution to the Heun equation"""
     epsilon = 1 + alpha + beta - gamma - delta
 
     z0 = z_range[0]
@@ -130,9 +130,9 @@ def heun(z_range: np.ndarray, *, a: complex, q: complex,
     delta_z = z_range[1] - z0
 
     subintervals = subdivide_domain(z_range)
-    heun_function = np.array([init_val])
-
-    for subinterval in subintervals:
+    heun_function = np.array([])
+    print(init_val)
+    for i, subinterval in enumerate(subintervals):
         points = len(subinterval)
         p_func = heun_eq_coeff_1(subinterval, a, gamma, delta, epsilon)
         q_func = heun_eq_coeff_0(subinterval, a, q, alpha, beta)
@@ -144,9 +144,14 @@ def heun(z_range: np.ndarray, *, a: complex, q: complex,
         contribution += (init_slope - init_val)*path_ordered_exp_2(q_func,
                                                                    x_func, delta_z, subinterval, points)
 
-        heun_function = np.append(heun_function, contribution[1:])
+        if i == 0:
+            heun_function = np.append(heun_function, contribution)
+        else:
+            heun_function = np.append(heun_function, contribution[1:])
+
         init_val = contribution[-1]
         init_slope = (contribution[-1] - contribution[-2])/delta_z
+    print(heun_function[0])
     return heun_function
 
 
@@ -161,11 +166,11 @@ if __name__ == "__main__":
     DELTA = 0.5 + 1j*0
 
     # Domain definition
-    N = 100000
+    N = 1000
 
-    Z_MIN = 1.001
-    Z_MAX = 8.64359*1e6
-    # Z_MAX = 500
+    Z_MIN = 1.0001
+    # Z_MAX = 8.64359*1e6
+    Z_MAX = 50
     Z = np.linspace(Z_MIN, Z_MAX, N)
 
     start = time.perf_counter()

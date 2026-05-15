@@ -164,8 +164,8 @@ if __name__ == "__main__":
     N = 100000
 
     Z_MIN = 1.001
-    # Z_MAX = 8.64359*1e6
-    Z_MAX = 500
+    Z_MAX = 8.64359*1e6
+    # Z_MAX = 500
     Z = np.linspace(Z_MIN, Z_MAX, N)
 
     start = time.perf_counter()

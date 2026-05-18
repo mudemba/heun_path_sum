@@ -158,8 +158,8 @@ def heun(z_range: np.ndarray, *, a: complex, q: complex,
 # remove in final version
 if __name__ == "__main__":
     # Heun parameters
-    A = -1.1019283813284071*1e8 + 1j*0
-    Q = 2.9476583933034893*1e7 + 1j*0
+    A = -19.0954 + 1j*0
+    Q = 4.84052 + 1j*0
     ALPHA = -1.0 + 1j*0
     BETA = 1.5 + 1j*0
     GAMMA = 0.5 + 1j*0
@@ -170,7 +170,7 @@ if __name__ == "__main__":
 
     Z_MIN = 1.0001
     # Z_MAX = 8.64359*1e6
-    Z_MAX = 50
+    Z_MAX = 3
     Z = np.linspace(Z_MIN, Z_MAX, N)
 
     start = time.perf_counter()

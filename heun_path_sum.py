@@ -93,7 +93,7 @@ def path_ordered_exp_2(q_vec: np.ndarray, x_vec: np.ndarray,
     return result
 
 
-def subdivide_domain(domain: np.ndarray, max_sub_points=1500, max_sub_width=700) -> list[np.ndarray]:
+def subdivide_domain(domain: np.ndarray, max_sub_points=100, max_sub_width=700) -> list[np.ndarray]:
     """ Splits an interval into subintervals, ensuring each subinterval contains no more than 
     max_sub_points points and has a width no greater than max_sub_width."""
     points = len(domain)
@@ -169,7 +169,6 @@ if __name__ == "__main__":
     N = 100000
 
     Z_MIN = 1.0001
-    # Z_MAX = 8.64359*1e6
     Z_MAX = 3
     Z = np.linspace(Z_MIN, Z_MAX, N)
 

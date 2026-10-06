@@ -1,2 +1,3 @@
 numpy
-scipy
+scipy>=1.6    # cumulative_trapezoid was added in SciPy 1.6
+matplotlib    # only needed to run example.py

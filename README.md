@@ -12,7 +12,7 @@ cd heun_path_sum
 pip install -r requirements.txt
 ```
 
-The module is the single file `heun_path_sum.py`. It needs Python 3.9 or later, NumPy and SciPy 1.6 or later. Matplotlib is needed only to run `example.py`.
+The module is the single file `heun_path_sum.py`. It needs Python 3.9 or later, NumPy and SciPy 1.6 or later. Matplotlib is needed only to run `example.py`, and pytest only to run the tests.
 
 ## Usage
 
@@ -72,7 +72,7 @@ The result is only as good as the grid, and three rules matter.
 
 ## Accuracy and limits
 
-The check used here is the case $\epsilon = 0$, $q = a\alpha\beta$, where $H\ell$ reduces exactly to the hypergeometric function ${}_2F_1(\alpha, \beta; \gamma; z)$. With $\alpha = 0.7$, $\beta = 1.1$, $\gamma = 1.6$ on `np.linspace(z0, 0.95, N)`, the largest relative error over the grid is:
+Every error figure in this section is recomputed by the [tests](#tests). The check used here is the case $\epsilon = 0$, $q = a\alpha\beta$, where $H\ell$ reduces exactly to the hypergeometric function ${}_2F_1(\alpha, \beta; \gamma; z)$. With $\alpha = 0.7$, $\beta = 1.1$, $\gamma = 1.6$ on `np.linspace(z0, 0.95, N)`, the largest relative error over the grid is:
 
 | First point `z0` | N = 2,000 | N = 5,000 | N = 20,000 | N = 80,000 |
 |---|---|---|---|---|
@@ -93,12 +93,20 @@ What the table shows:
 Other things to know:
 
 - **An unresolved start is not recovered.** With a first point of $10^{-4}$ and 5,000 points, where the step is twice $|z_0|$, the error in this check is $2 \times 10^{-2}$. With a coarser start the result is meaningless.
-- **A negative real part of $\gamma$ makes a close start worse.** For one parameter set with $\gamma = -0.4$ and 20,000 points, a first point of $0.001$ gave an error of $10^{-3}$ and a first point of $0.05$ gave $10^{-6}$.
+- **A negative real part of $\gamma$ makes a close start worse.** For one parameter set with $\gamma = -0.4$ and 20,000 points, a first point of $0.001$ gave an error of $1.3 \times 10^{-3}$ and a first point of $0.05$ gave $1.2 \times 10^{-6}$.
 - **Long intervals lose accuracy.** In the second example of `example.py`, at a fixed step of $10^{-4}$, the error at the end point is $4 \times 10^{-7}$ for an interval of length 2 and $1.5 \times 10^{-5}$ for one of length 20.
 
-In a wider test against the power series, over 71 random real and complex parameter sets on grids from $0.05$ to $0.8$ along both real directions and along complex rays, the median error with 20,000 points was $1.2 \times 10^{-7}$ and the largest $4 \times 10^{-7}$. With 4,000 points the median was $2.4 \times 10^{-6}$ and the largest $9 \times 10^{-6}$.
+In a wider test against the power series, over 60 random real and complex parameter sets on grids from $0.05$ to $0.8$ along both real directions and along complex rays, the median error with 20,000 points was $8 \times 10^{-8}$ and the largest $2.8 \times 10^{-7}$. With 4,000 points the median was $1.6 \times 10^{-6}$ and the largest $5.6 \times 10^{-6}$. Some of these solutions pass through zero, where a relative error means little, so the error here is the largest absolute error divided by the largest value of $|H\ell|$ on the grid.
 
 When more accuracy is needed than these figures, use the power series inside $|z| < \min(1, |a|)$, or an arbitrary-precision implementation such as Mathematica's `HeunG`.
+
+## Tests
+
+```bash
+pytest
+```
+
+The tests check the start values against closed forms and a 30-digit evaluation, the handling of unusable input, and the accuracy figures above: every cell of the table and every error figure quoted in that section is recomputed and compared with the documented value. `pytest -s -k readme` prints each measured figure beside the documented one. The references are independent of the path-sum method: SciPy's hypergeometric function, a separately written power series, and direct integration of Heun's equation. Two of the tests use mpmath and are skipped if it is not installed. The whole suite takes about 20 seconds.
 
 ## How it works
 

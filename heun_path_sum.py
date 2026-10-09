@@ -1,12 +1,12 @@
 """Local Heun functions by the Birkandan-Giscard-Tamar path-sum method.
 
 Heun's general equation is the second-order linear equation with regular
-singular points at z = 0, 1, a and infinity,
+singular points at z = 0, 1, a and infinity. It is given by
 
     y'' + (gamma/z + delta/(z - 1) + epsilon/(z - a)) y'
         + (alpha*beta*z - q) / (z*(z - 1)*(z - a)) y = 0,
 
-where epsilon = alpha + beta + 1 - gamma - delta.  The function heun()
+where epsilon = alpha + beta + 1 - gamma - delta. The function heun()
 evaluates the local solution Hl(a, q; alpha, beta, gamma, delta; z), the
 solution that is analytic at z = 0 with Hl(0) = 1, on a uniform grid.
 
@@ -18,14 +18,14 @@ The method writes the solution as an integral series (a "path sum"),
 
 where the integrals run from z0 to z, y0 and y0' are the value and slope
 at the first grid point z0, and each G is the resolvent of a Volterra
-kernel K, G = K + K*K + K*K*K + ... (products are Volterra compositions).
-On a grid the kernels become triangular matrices and the resolvent is one
-triangular solve.  The value and slope at z0 come from the power series
-of Hl about z = 0.
+kernel K, G = K + K*K + K*K*K + ... (* denotes Volterra compositions).
+On a grid, the kernels become triangular matrices, and the resolvent is 
+found via one triangular solve. The value and slope at z0 come from the 
+power series of Hl about z = 0.
 
-The grid is solved in consecutive blocks.  Each block is started from the
-value and slope at the end of the one before, and that slope is the
-derivative of the same formula,
+The grid is solved in consecutive blocks. Each block starts from the value
+and slope at the end of the one before, and that slope is the derivative of
+the same formula,
 
     y'(z) = y0 * G1(z, z0)
             + (y0' - y0) * (exp(z - z0)
@@ -88,7 +88,7 @@ def _weight_func(z_range: np.ndarray, a: complex, gamma: complex,
                  delta: complex, epsilon: complex) -> np.ndarray:
     """Integrating factor z^gamma (z - 1)^delta (a - z)^epsilon.
 
-    Principal branches are used.  Only ratios of this function at two
+    Principal branches are used. Only ratios of this function at two
     points of the same block enter the result.
     """
     return (z_range**gamma) * ((z_range - 1)**delta) * ((a - z_range)**epsilon)
@@ -105,7 +105,7 @@ def _kernel_1(z_range: np.ndarray, x_vec: np.ndarray, y_vec: np.ndarray,
     with w(s) = y(s) exp(s), y the integrating factor and X = -P - Q - 1,
     where P and Q are the coefficients of y' and y in Heun's equation.
     The exponential is taken relative to the first point of the block,
-    which leaves the ratio unchanged and cannot overflow.  Entries below
+    which leaves the ratio unchanged and cannot overflow. Entries below
     the diagonal are not used.
     """
     weight = y_vec*np.exp(z_range - z_range[0])
@@ -122,7 +122,7 @@ def _kernel_2(z_range: np.ndarray, x_vec: np.ndarray,
 
         K2(z_j, z_i) = X(z_j) exp(z_j - z_i) + Q(z_j),
 
-    where Q is the coefficient of y in Heun's equation.  Entries below the
+    where Q is the coefficient of y in Heun's equation. Entries below the
     diagonal are not used.
     """
     growth = np.exp(z_range[np.newaxis, :] - z_range[:, np.newaxis])
@@ -133,12 +133,12 @@ def _neumann_sum(kernel: np.ndarray, delta_z: complex) -> np.ndarray:
     """Resolvent of a Volterra kernel along the block, from one solve.
 
     Returns delta_z * G(z_j, z_0) for every point z_j of the block, where
-    G = K + K*K + K*K*K + ... solves G = K + K*G.  With the compositions
+    G = K + K*K + K*K*K + ... solves G = K + K*G. With the compositions
     discretised by the trapezoidal rule, the Neumann series becomes the
     triangular system solved here.
 
     The solve gives the first sample only half its weight, because the
-    trapezoidal rule halves the diagonal.  It is therefore set directly:
+    trapezoidal rule halves the diagonal. It is therefore set directly:
     at coincident points the composition integral is empty, so
     G(z_0, z_0) = K(z_0, z_0) exactly.
     """
@@ -201,7 +201,7 @@ def _start_values(z0: complex, a: complex, q: complex, alpha: complex,
         Q_n = n ((n - 1 + gamma)(1 + a) + a delta + epsilon),
         P_n = (n - 1 + alpha)(n - 1 + beta),
 
-    which converges for abs(z) < min(1, abs(a)).  The recurrence is run on
+    which converges for abs(z) < min(1, abs(a)). The recurrence is run on
     the terms t_n = c_n z0^n rather than on the coefficients, which can
     overflow, and stops once two terms in a row are too small to change
     either sum.
@@ -249,7 +249,7 @@ def _crosses_branch_cut(z_range: np.ndarray, a: complex) -> bool:
 
     The factor z^gamma (z - 1)^delta (a - z)^epsilon is evaluated on
     principal branches, so it is discontinuous wherever z, z - 1 or a - z
-    crosses the negative real axis.  That can only happen on a grid that
+    crosses the negative real axis. That can only happen on a grid that
     is not real.
     """
     for factor in (z_range, z_range - 1, a - z_range):
@@ -266,7 +266,7 @@ def subdivide_domain(domain: np.ndarray,
     """Split a grid into consecutive blocks that share their end points.
 
     Each block holds at most max_sub_points points and spans at most
-    max_sub_width.  The last point of a block is the first point of the
+    max_sub_width. The last point of a block is the first point of the
     next, so the blocks can be solved one after another.
 
     Parameters
@@ -281,7 +281,7 @@ def subdivide_domain(domain: np.ndarray,
     Returns
     -------
     list of np.ndarray
-        Views into domain, in order.  Empty if domain is empty.
+        Views into domain, in order. Empty if domain is empty.
     """
     if max_sub_points < 2:
         raise ValueError("max_sub_points must be at least 2")
@@ -362,7 +362,7 @@ def heun(z_range: np.ndarray, *, a: complex, q: complex,
     Parameters
     ----------
     z_range : np.ndarray
-        Uniformly spaced grid of at least 3 points, real or complex.  The
+        Uniformly spaced grid of at least 3 points, real or complex. The
         solution is started at z_range[0] from the power series about
         z = 0, so the first point must lie inside the disc where that
         series converges, abs(z) < min(1, abs(a)), and not at 0.  The grid
@@ -370,16 +370,16 @@ def heun(z_range: np.ndarray, *, a: complex, q: complex,
         across one.  A complex grid may run in any direction along which
         none of z, z - 1 and a - z crosses the negative real axis.
     a : complex
-        Position of the third finite singular point.  Must not be 0.
+        Position of the third finite singular point. Must not be 0.
     q : complex
         Accessory parameter.
     alpha, beta, gamma, delta : complex
         Exponent parameters.  The fifth, epsilon, is fixed by
-        epsilon = alpha + beta + 1 - gamma - delta.  gamma must not be
+        epsilon = alpha + beta + 1 - gamma - delta. gamma must not be
         zero or a negative integer, where Hl is not defined.
     max_sub_points : int, optional
         The grid is solved in consecutive blocks of at most this many
-        points.  The default rarely needs changing; memory grows with the
+        points. The default rarely needs changing; memory grows with the
         square of the block length.  Must be at least 3.
     max_sub_width : float, optional
         Largest distance spanned by a block.  The default keeps
@@ -404,12 +404,12 @@ def heun(z_range: np.ndarray, *, a: complex, q: complex,
     -----
     The start values are accurate to rounding, so the error comes from
     the discretisation and falls as the grid is refined, a little faster
-    than in proportion to the step.  The step has
-    to resolve the coefficients of the equation, which vary like 1/z near
-    z = 0: a step of a few per cent of abs(z_range[0]) or less is a good
-    choice, and a step larger than abs(z_range[0]) gives a start that no
-    later refinement recovers.  Starting further from z = 0, where a
-    given step resolves more, is therefore cheaper than starting close.
+    than in proportion to the step. The step has to resolve the
+    coefficients of the equation, which vary like 1/z near z = 0: a step 
+    of a few per cent of abs(z_range[0]) or less is a good choice, and a
+    step larger than abs(z_range[0]) gives a start that no later
+    refinement recovers. Starting further from z = 0, where a given step
+    resolves more, is therefore cheaper than starting close.
 
     The local solution about another singular point follows from the same
     routine by a change of variable.  About z = 1, for example,

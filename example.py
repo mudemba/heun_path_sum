@@ -1,13 +1,13 @@
 """Two worked examples for heun_path_sum.heun().
 
-1. A check against a closed form.  When epsilon = 0 and q = a*alpha*beta,
+1. A check against a closed form. When epsilon = 0 and q = a*alpha*beta,
    the singular point at z = a drops out of Heun's equation and the local
    Heun function reduces to the Gauss hypergeometric function
    2F1(alpha, beta; gamma; z).
 
-2. The solution that is analytic at z = 1, obtained from the same routine
-   by the change of variable z -> 1 - z.  The parameters have
-   gamma = delta = epsilon = 1/2, the algebraic form of Lame's equation.
+2. A check against the solution that is analytic at z = 1, obtained from
+   the same routine by the change of variable z -> 1 - z. The parameters
+   have gamma = delta = epsilon = 1/2, the algebraic form of Lame's equation.
 
 Both grids start inside the disc where the power series about the
 expansion point converges, with a step that is a small fraction of the

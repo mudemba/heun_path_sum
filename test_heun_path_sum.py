@@ -1,6 +1,6 @@
 """Tests for heun_path_sum.
 
-Run with:  pytest
+Run with: pytest
 Add -s to print each measured error beside the figure quoted in the README.
 
 The accuracy tests reproduce the numbers in the README's "Accuracy and
